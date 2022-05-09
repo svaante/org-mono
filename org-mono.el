@@ -330,3 +330,4 @@
   (bury-buffer (org-mono--buffer)))
 
 
+(provide 'org-mono)
