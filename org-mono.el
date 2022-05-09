@@ -1,5 +1,8 @@
 ;;; org-mono.el --- Org mono file -*- lexical-binding: t -*-
 
+(defgroup org-mono nil ""
+  :group 'extensions)
+
 (defcustom org-mono-cache-delay 2
   ""
   :type 'integer
