@@ -33,7 +33,8 @@
   :type 'string
   :group 'org-mono)
 
-(defcustom org-mono-capture-default-headline-function #'org-mono--capture-default-headline
+(defcustom org-mono-capture-default-headline-function
+  #'org-mono--capture-default-headline
   ""
   :type 'function
   :group 'org-mono)
@@ -45,18 +46,19 @@
   (let ((map (make-sparse-keymap)))
     (define-key map "c" #'org-mono-capture)
     (define-key map "k" #'org-mono-delete-heading)
-    (define-key map "l" #'org-mono-goto-internal-links-at-heading)
+    (define-key map "l" #'org-mono-goto-internal-links)
+    (define-key map "t" #'org-mono-todo)
     (set-keymap-parent map embark-general-map)
     map))
 
 (defvar org-mono-cache-timer nil "Org-mono cache timer object.")
-(defvar org-mono-headline-cache nil)
+(defvar org-mono-headline-components-cache nil)
 (defvar org-mono-fuzzy-links-and-headlines-cache nil)
 (defvar org-mono--headline nil "For internal use only")
 
 (defun org-mono--cache ()
   (when (bound-and-true-p org-mono-mode)
-    (setq org-mono-headline-cache (org-mono--list-headlines))
+    (setq org-mono-headline-components-cache (org-mono--list-headline-components))
     (setq org-mono-fuzzy-links-and-headlines-cache (org-mono--fuzzy-links-and-headings)))
   (setq org-mono-cache-timer nil))
 
@@ -74,11 +76,19 @@
         (org-mono-mode)))
     buffer))
 
-(defun org-mono--list-headlines (&optional cache headline-regexp)
-  (if (and cache org-mono-headline-cache)
-      org-mono-headline-cache
+(defun org-mono--heading-components ()
+  (pcase-let* ((`(,level ,_ ,todo ,prio ,headline ,tags) (org-heading-components)))
+    (list :level level
+          :todo todo
+          :prio prio
+          :headline headline
+          :tags tags)))
+
+(defun org-mono--list-headline-components (&optional cache headline-regexp)
+  (if (and cache org-mono-headline-components-cache)
+      org-mono-headline-components-cache
     (setq
-     org-mono-headline-cache
+     org-mono-headline-components-cache
      (with-current-buffer (org-mono--buffer)
        (let ((headline-regexp (or headline-regexp org-outline-regexp)))
          (save-restriction
@@ -89,8 +99,15 @@
                (while (re-search-forward headline-regexp nil t)
                  ;; Remove the leading asterisk from
                  ;; `org-link-heading-search-string' result.
-                 (push (nth 4 (org-heading-components)) tbl))
+                 (push (org-mono--heading-components) tbl))
                tbl))))))))
+
+(defun org-mono--list-headlines (&optional cache headline-regexp)
+  (let ((org-mono-headline-components
+         (org-mono--list-headline-components cache headline-regexp)))
+      (mapcar (lambda (component)
+                (plist-get component :headline))
+              org-mono-headline-components)))
 
 (defun org-mono--list-all-fuzzy-links (widen-buffer)
   (save-restriction
@@ -119,6 +136,25 @@
                                  (cons link title))
                                fuzzy-links)))))))))))
 
+(defun org-mono--internal-links-for-heading (heading &optional cache)
+  (seq-filter (lambda (link-heading)
+                (string= heading
+                         (car link-heading)))
+              (org-mono--fuzzy-links-and-headings cache)))
+
+(defun org-mono-current-heading ()
+  (when (and (derived-mode-p 'org-mode)
+             (not (org-before-first-heading-p)))
+    (nth 4 (org-heading-components))))
+
+(defun org-mono--fuzzy-link-to-marker (fuzzy-link &optional create)
+  (with-current-buffer (find-file-noselect org-mono-file)
+    (org-with-wide-buffer
+     (let ((org-link-search-must-match-exact-headline (or (not create) 'query-to-create)))
+       (ignore-errors (org-link-search fuzzy-link)))
+     (point-marker))))
+
+;; Capture template
 (defun org-mono--narrow-to-subtree-top-level ()
   (interactive)
   (save-excursion
@@ -144,31 +180,12 @@
                            nil t)
         (let* ((_ (beginning-of-line))
                (beg (point)))
-          ;;(setq-local org-narrow-to-subtree-var beg)
+          ;; Move to next of current match
           (org-forward-heading-same-level 1 t)
           (when (= beg (point)) (end-of-buffer)))
       (let ((base-template (org-capture-get :template)))
         (org-capture-put :template (concat (format "* %s\n" headline)
                                            base-template))))))
-
-(defun org-mono-interal-links-for-heading (heading &optional cache)
-  (seq-filter (lambda (link-heading)
-                (string= heading
-                         (car link-heading)))
-              (org-mono--fuzzy-links-and-headings cache)))
-
-(defun org-mono-current-heading ()
-  (when (and (derived-mode-p 'org-mode)
-             (not (org-before-first-heading-p)))
-    (nth 4 (org-heading-components))))
-
-
-(defun org-mono--fuzzy-link-to-marker (fuzzy-link &optional create)
-  (with-current-buffer (find-file-noselect org-mono-file)
-    (org-with-wide-buffer
-     (let ((org-link-search-must-match-exact-headline (or (not create) 'query-to-create)))
-       (ignore-errors (org-link-search fuzzy-link)))
-     (point-marker))))
 
 ;; Completion at point
 
@@ -196,7 +213,7 @@
 (defun org-mono--internal-links-in-heading ()
   (when-let ((heading (org-mono-current-heading)))
     (let* ((heading (nth 4 (org-heading-components)))
-           (headlines (org-mono-interal-links-for-heading heading t)))
+           (headlines (org-mono--internal-links-for-heading heading t)))
       (mapcar #'cdr headlines))))
 
 (defun org-mono-eldoc-internal-links (callback)
@@ -221,12 +238,35 @@
       (org-narrow-to-subtree)
       (org-show-subtree))))
 
+(defun org-mono--annotate-format-string (str width)
+  (truncate-string-to-width
+   (if str str "")
+   ;;(propertize str 'face (plist-get annotation :face))
+   width
+   0 ?\s))
+
 (defun org-mono--annotate-headline (headline)
-  (let* ((links-headlines (org-mono-interal-links-for-heading headline t))
+  (let* ((headline-components (seq-find (lambda (components)
+                                          (equal (plist-get components :headline )
+                                                 headline))
+                                        (org-mono--list-headline-components t)))
+         (links-headlines (org-mono--internal-links-for-heading headline t))
          (links (mapcar #'cdr links-headlines))
          (links (string-join links ", ")))
-    (concat (propertize " " 'display '(space :align-to center))
-            links)))
+    (concat
+     "  "
+     (org-mono--annotate-format-string
+      (when-let ((level (plist-get headline-components :level)))
+        (make-string level ?*))
+      5)
+     "  "
+     (org-mono--annotate-format-string
+      (plist-get headline-components :todo)
+      4)
+     "  "
+     (org-mono--annotate-format-string
+      links
+      20))))
 
 (defun org-mono--consult-read-heading (&optional prompt default headlines)
   (let ((headlines (or headlines (org-mono--list-headlines))))
@@ -247,12 +287,26 @@
 ;; Commands
 
 ;;;###autoload
+(defun org-mono-goto-internal-links (heading internal-link)
+  (interactive
+   (list
+    (setq h (org-mono--consult-read-heading "Headline: "))
+    (let* ((prompt (format "Internal links for *%s*: " h))
+           (links-heading (org-mono--internal-links-for-heading h t))
+           (headings (mapcar #'cdr links-heading)))
+      (when headings
+        (org-mono--consult-read-heading prompt nil headings)))))
+  (if internal-link
+      (org-mono-goto-heading internal-link)
+    (user-error "Unable to derive current heading or missing internal links")))
+
+;;;###autoload
 (defun org-mono-goto-internal-links-at-heading (heading)
   (interactive
    (list
     (when-let ((heading (org-mono-current-heading)))
       (let* ((prompt (format "Internal links for *%s*: " heading))
-             (links-heading (org-mono-interal-links-for-heading heading t))
+             (links-heading (org-mono--internal-links-for-heading heading t))
              (headings (mapcar #'cdr links-heading)))
         (when headings
           (org-mono--consult-read-heading prompt nil headings))))))
@@ -276,6 +330,7 @@
           (org-narrow-to-subtree)
           (delete-region (point-min) (point-max)))))))
 
+;;;###autoload
 (defun org-mono-goto-heading (heading)
   (interactive
    (list
@@ -285,6 +340,19 @@
   (goto-char (org-mono--fuzzy-link-to-marker heading))
   (org-narrow-to-subtree))
 
+;;;###autoload
+(defun org-mono-todo (heading)
+  (interactive
+   (list
+    (org-mono--consult-read-heading "Todo headline: ")))
+  (with-current-buffer (org-mono--buffer)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (org-mono--fuzzy-link-to-marker heading))
+        (org-todo)))))
+
+;;;###autoload
 (defun org-mono-capture (headline)
   (interactive
    (list
@@ -350,6 +418,5 @@
   (org-mono--init-templates)
   (add-to-list 'embark-keymap-alist '(org-mono-headline . org-mono-action-map))
   (bury-buffer (org-mono--buffer)))
-
 
 (provide 'org-mono)

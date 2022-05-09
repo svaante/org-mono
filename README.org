@@ -1,0 +1,2 @@
+* TODO Fix annotation format
+https://www.reddit.com/r/emacs/comments/uo5u19/completingread_annotations_to_align_or_not/
