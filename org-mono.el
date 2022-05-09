@@ -133,13 +133,14 @@
                       (org-mono--consult-read-heading
                        "Capture headline: "
                        (funcall org-mono-capture-default-headline-function)))))
+    (widen)
     (beginning-of-buffer)
     (if (re-search-forward (format org-complex-heading-regexp-format
                                    (regexp-quote headline))
                            nil t)
         (let* ((_ (beginning-of-line))
                (beg (point)))
-          (setq-local org-narrow-to-subtree-var beg)
+          ;;(setq-local org-narrow-to-subtree-var beg)
           (org-forward-heading-same-level 1 t)
           (when (= beg (point)) (end-of-buffer)))
       (let ((base-template (org-capture-get :template)))
