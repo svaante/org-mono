@@ -1,5 +1,9 @@
 ;;; org-mono.el --- Org mono file -*- lexical-binding: t -*-
 
+(require 'org-macs)
+(require 'org-element)
+(require 'ol)
+
 (defgroup org-mono nil ""
   :group 'extensions)
 
