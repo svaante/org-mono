@@ -126,11 +126,12 @@
 (defun org-mono-capture-template-new-or-edit (&optional headline)
   (add-hook 'org-capture-mode-hook
             'org-mono--narrow-to-subtree-top-level t t)
+  ;; Store buffers initial state
+  (org-capture-put-target-region-and-position)
   (let ((headline (or headline
                       org-mono--headline
                       (org-mono--consult-read-heading))))
     (beginning-of-buffer)
-    (org-capture-put-target-region-and-position)
     (if (re-search-forward (format org-complex-heading-regexp-format
                                    (regexp-quote headline))
                            nil t)
