@@ -44,14 +44,13 @@
 (defvar org-mono-action-map
   (let ((map (make-sparse-keymap)))
     (define-key map "c" #'org-mono-capture)
-    (define-key map "l" #'org-mono-goto-internal-link-heading)
+    (define-key map "l" #'org-mono-goto-internal-links-at-heading)
     (set-keymap-parent map embark-general-map)
     map))
 
 (defvar org-mono-cache-timer nil "Org-mono cache timer object.")
 (defvar org-mono-headline-cache nil)
 (defvar org-mono-fuzzy-links-and-headlines-cache nil)
-
 (defvar org-mono--headline nil "For internal use only")
 
 (defun org-mono--cache ()
@@ -246,8 +245,8 @@
 
 ;; Commands
 
-;; TODO
-(defun org-mono-goto-internal-link-heading (heading)
+;;;###autoload
+(defun org-mono-goto-internal-links-at-heading (heading)
   (interactive
    (list
     (when-let ((heading (org-mono-current-heading)))
@@ -255,16 +254,17 @@
              (links-heading (org-mono-interal-links-for-heading heading t))
              (headings (mapcar #'cdr links-heading)))
         (when headings
-          (completing-read prompt headings nil t))))))
+          (org-mono--consult-read-heading prompt nil headings))))))
   (if heading
-      (org-link-open-from-string (format "[[%s]]" heading))
+      (org-mono-goto-heading heading)
     (user-error "Unable to derive current heading or missing internal links")))
 
 (defun org-mono-goto-heading (heading)
   (interactive
    (list
     (org-mono--consult-read-heading "Headline: ")))
-  (switch-to-buffer (find-file-noselect org-mono-file))
+  (switch-to-buffer (org-mono--buffer))
+  (widen)
   (goto-char (org-mono--fuzzy-link-to-marker heading))
   (org-narrow-to-subtree))
 
