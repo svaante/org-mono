@@ -115,12 +115,20 @@
                                  (cons link title))
                                fuzzy-links)))))))))))
 
+(defun org-mono--narrow-to-subtree-top-level ()
+  (interactive)
+  (save-excursion
+    (condition-case err
+        (outline-up-heading 9999)
+      (error nil))
+    (org-narrow-to-subtree)))
+
 (defun org-mono-capture-template-new-or-edit (&optional headline)
+  (add-hook 'org-capture-mode-hook
+            'org-mono--narrow-to-subtree-top-level t t)
   (let ((headline (or headline
                       org-mono--headline
                       (org-mono--consult-read-heading))))
-    (add-hook 'org-capture-mode-hook
-              'org-narrow-to-subtree-top-level t t)
     (beginning-of-buffer)
     (org-capture-put-target-region-and-position)
     (if (re-search-forward (format org-complex-heading-regexp-format
