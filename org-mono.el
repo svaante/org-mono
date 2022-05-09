@@ -130,7 +130,9 @@
   (org-capture-put-target-region-and-position)
   (let ((headline (or headline
                       org-mono--headline
-                      (org-mono--consult-read-heading))))
+                      (org-mono--consult-read-heading
+                       "Capture headline: "
+                       (funcall org-mono-capture-default-headline-function)))))
     (beginning-of-buffer)
     (if (re-search-forward (format org-complex-heading-regexp-format
                                    (regexp-quote headline))
