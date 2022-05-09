@@ -308,7 +308,6 @@
                      rest))))
    org-mono-templates))
 
-;;;###autoload
 (define-minor-mode org-mono-mode
   "" :lighter " org-mono"
   (if (string= buffer-file-name (expand-file-name org-mono-file))
