@@ -18,8 +18,8 @@
   :type 'string
   :group 'org-mono)
 
-(defcustom org-mono-templates '(("st" "Sub Todo" "** TODO %?\n")
-                                ("n" "Note" "%?"))
+(defcustom org-mono-templates '(("t" "Todo" "** TODO %?\n" :unnarrowed t)
+                                ("n" "Note" "%?" :unnarrowed t))
   ""
   :type 'list
   :group 'org-mono)
