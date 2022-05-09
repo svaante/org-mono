@@ -44,6 +44,7 @@
 (defvar org-mono-action-map
   (let ((map (make-sparse-keymap)))
     (define-key map "c" #'org-mono-capture)
+    (define-key map "k" #'org-mono-delete-heading)
     (define-key map "l" #'org-mono-goto-internal-links-at-heading)
     (set-keymap-parent map embark-general-map)
     map))
@@ -258,6 +259,22 @@
   (if heading
       (org-mono-goto-heading heading)
     (user-error "Unable to derive current heading or missing internal links")))
+
+;;;###autoload
+(defun org-mono-delete-heading (heading)
+  (interactive
+   (list
+    (org-mono--consult-read-heading "Delete headline: ")))
+  (when (yes-or-no-p
+         (format "Do you really want to delete *%s* and its contents"
+                 heading))
+    (with-current-buffer (org-mono--buffer)
+      (save-excursion
+        (save-restriction
+          (widen)
+          (goto-char (org-mono--fuzzy-link-to-marker heading))
+          (org-narrow-to-subtree)
+          (delete-region (point-min) (point-max)))))))
 
 (defun org-mono-goto-heading (heading)
   (interactive
