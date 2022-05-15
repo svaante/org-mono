@@ -184,6 +184,7 @@
           (org-forward-heading-same-level 1 t)
           (when (= beg (point)) (end-of-buffer)))
       (let ((base-template (org-capture-get :template)))
+        (end-of-buffer)
         (org-capture-put :template (concat (format "* %s\n" headline)
                                            base-template))))))
 
@@ -232,71 +233,78 @@
 ;; Consult / completing-read
 (defvar org-mono--preview-setup-maker nil)
 
-(defun consult-org-mono--headline-preview (state cand)
-  (cond ((and (eq state 'preview)
-              (member cand (org-mono--list-headlines t)))
-         ;; Preview with existing cand
-         (let ((mark (org-mono--fuzzy-link-to-marker cand))
-               (buffer (current-buffer))
-               (mono-buffer (org-mono--buffer)))
-           (unless (eq buffer mono-buffer)
-             (switch-to-buffer mono-buffer t))
-           (widen)
-           (goto-char mark)
-           (org-narrow-to-subtree)
-           (org-show-subtree)))
-        ((eq state 'preview)
-         ;; Preview with none existing cand
-         (when (markerp org-mono--preview-setup-maker)
-           (switch-to-buffer (marker-buffer org-mono--preview-setup-maker) t)
-           (goto-char org-mono--preview-setup-maker)))
-         ((eq state 'setup)
-         ;; Setup marker
-          (progn
-            (setq org-mono--preview-setup-maker (point-marker))))))
+(defun consult-org-mono--headline-preview ()
+  (let ((org-mono--preview-setup-maker (point-marker)))
+    (lambda (state cand)
+      (cond ((and (eq state 'preview)
+                  (member cand (org-mono--list-headlines t)))
+             ;; Preview with existing cand
+             (let ((mark (org-mono--fuzzy-link-to-marker cand))
+                   (buffer (current-buffer))
+                   (mono-buffer (org-mono--buffer)))
+               (unless (eq buffer mono-buffer)
+                 (switch-to-buffer mono-buffer t))
+               (widen)
+               (goto-char mark)
+               (org-narrow-to-subtree)
+               (org-show-subtree)))
+            ((eq state 'preview)
+             ;; Preview with none existing cand
+             (when (markerp org-mono--preview-setup-maker)
+               (switch-to-buffer (marker-buffer org-mono--preview-setup-maker) t)
+               (goto-char org-mono--preview-setup-maker)))))))
 
-(defun org-mono--annotate-format-string (str width)
-  (truncate-string-to-width
-   (if str str "")
-   ;;(propertize str 'face (plist-get annotation :face))
-   width
-   0 ?\s))
+(defun org-mono--annotate-format-string (str width f)
+  (propertize (truncate-string-to-width (or str "") width 0 ?\s)
+              'face f))
 
-(defun org-mono--annotate-headline (headline)
-  (let* ((headline-components (seq-find (lambda (components)
-                                          (equal (plist-get components :headline )
-                                                 headline))
-                                        (org-mono--list-headline-components t)))
-         (links-headlines (org-mono--internal-links-for-heading headline t))
-         (links (mapcar #'cdr links-headlines))
-         (links (string-join links ", ")))
-    (concat
-     "  "
-     (org-mono--annotate-format-string
-      (when-let ((level (plist-get headline-components :level)))
-        (make-string level ?*))
-      5)
-     "  "
-     (org-mono--annotate-format-string
-      (plist-get headline-components :todo)
-      4)
-     "  "
-     (org-mono--annotate-format-string
-      links
-      20))))
+(defun org-mono--annotate-headline (candidates)
+  (let ((org-mono--candidates-max-length (seq-reduce (lambda (acc candidate)
+                                                       (max acc (length candidate)))
+                                                     candidates
+                                                     0)))
+    (lambda (candidate)
+      (let* ((headline-component (seq-find (lambda (component)
+                                             (equal (plist-get component :headline)
+                                                    candidate))
+                                           (org-mono--list-headline-components t)))
+             (links-headlines (org-mono--internal-links-for-heading candidate t))
+             (links (mapcar #'cdr links-headlines)))
+        (if headline-component
+          (concat
+           (make-string (- org-mono--candidates-max-length (length candidate)) ?\s)
+           "  "
+           (org-mono--annotate-format-string
+            (make-string (plist-get headline-component :level) ?*)
+            5
+            'org-level-4)
+           "  "
+           (org-mono--annotate-format-string
+            (plist-get headline-component :todo)
+            5
+            'org-todo)
+           "  "
+           (string-join (mapcar (lambda (link)
+                                  (propertize link 'face 'org-link))
+                                links)
+                        ", "))
+          " (new caption)")))))
 
 (defun org-mono--consult-read-heading (&optional prompt default headlines)
-  (let ((headlines (or headlines (org-mono--list-headlines))))
-    (consult--read
-     (if default
-         (cons default headlines)
-       headlines)
-     :prompt (or prompt "Heading: ")
-     :require-match nil
-     :category 'org-mono-headline
-     :default default
-     :annotate #'org-mono--annotate-headline
-     :state #'consult-org-mono--headline-preview)))
+    (save-excursion
+      (save-restriction
+        (let* ((headlines (or headlines (org-mono--list-headlines)))
+               (candidates (if default
+                               (cons default headlines)
+                             headlines)))
+          (consult--read
+           candidates
+           :prompt (or prompt "Heading: ")
+           :require-match nil
+           :category 'org-mono-headline
+           :default default
+           :annotate (org-mono--annotate-headline candidates)
+           :state (consult-org-mono--headline-preview))))))
 
 ;; Commands
 
