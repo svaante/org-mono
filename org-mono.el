@@ -230,13 +230,30 @@
                  ", ")))))))
 
 ;; Consult / completing-read
+(defvar org-mono--preview-setup-maker nil)
 
-(defun consult-org-mono--headline-preview (cand _)
-  (when cand
-    (ignore-errors
-      (consult--jump-nomark (org-mono--fuzzy-link-to-marker cand))
-      (org-narrow-to-subtree)
-      (org-show-subtree))))
+(defun consult-org-mono--headline-preview (state cand)
+  (cond ((and (eq state 'preview)
+              (member cand (org-mono--list-headlines t)))
+         ;; Preview with existing cand
+         (let ((mark (org-mono--fuzzy-link-to-marker cand))
+               (buffer (current-buffer))
+               (mono-buffer (org-mono--buffer)))
+           (unless (eq buffer mono-buffer)
+             (switch-to-buffer mono-buffer t))
+           (widen)
+           (goto-char mark)
+           (org-narrow-to-subtree)
+           (org-show-subtree)))
+        ((eq state 'preview)
+         ;; Preview with none existing cand
+         (when (markerp org-mono--preview-setup-maker)
+           (switch-to-buffer (marker-buffer org-mono--preview-setup-maker) t)
+           (goto-char org-mono--preview-setup-maker)))
+         ((eq state 'setup)
+         ;; Setup marker
+          (progn
+            (setq org-mono--preview-setup-maker (point-marker))))))
 
 (defun org-mono--annotate-format-string (str width)
   (truncate-string-to-width
@@ -270,19 +287,16 @@
 
 (defun org-mono--consult-read-heading (&optional prompt default headlines)
   (let ((headlines (or headlines (org-mono--list-headlines))))
-  (with-current-buffer (find-file-noselect org-mono-file)
-    (save-excursion
-      (save-restriction
-        (consult--read
-         (if default
-             (cons default headlines)
-           headlines)
-         :prompt (or prompt "Heading: ")
-         :require-match nil
-         :category 'org-mono-headline
-         :default default
-         :annotate #'org-mono--annotate-headline
-         :state #'consult-org-mono--headline-preview))))))
+    (consult--read
+     (if default
+         (cons default headlines)
+       headlines)
+     :prompt (or prompt "Heading: ")
+     :require-match nil
+     :category 'org-mono-headline
+     :default default
+     :annotate #'org-mono--annotate-headline
+     :state #'consult-org-mono--headline-preview)))
 
 ;; Commands
 
