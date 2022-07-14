@@ -397,7 +397,7 @@ Uses TABLE to calculate the max length for the candidates."
                                                   ?\s)))
                     org-mono-annotation-format)
             "  "))
-          " (new caption)")))))
+          " (new headline)")))))
 
 
 ;; Shamelessly stolen from org-roam-complete-everywhere
