@@ -1,6 +1,6 @@
-;;; org-headline-cmpl-test.el --- Test org-headline-cmpl.el -*- lexical-binding: t; no-byte-compile: t; -*-
+;;; org-mono-test.el --- Test org-mono.el -*- lexical-binding: t; no-byte-compile: t; -*-
 
-(require 'org-headline-cmpl)
+(require 'org-mono)
 (require 'ert)
 
 (defun org-file-1 ()
@@ -54,9 +54,9 @@
 (ert-deftest basic-level-filter-test ()
   (let* ((file (org-file-1))
          (buffer (find-file-noselect file))
-         (org-headline-cmpl-headline-level 1)
+         (org-mono-headline-level 1)
          (headlines-components
-          (org-headline-cmpl--headlines-components buffer)))
+          (org-mono--headlines-components buffer)))
     (should (equal
              (get-component-from-name headlines-components "H1")
              `((:level . 1)
@@ -76,27 +76,27 @@
   (let* ((file1 (org-file-1))
          (buffer1 (find-file-noselect file1))
          (file2 (org-file-2 file1))
-         (org-headline-cmpl-files (list file1 file2)))
-    (org-headline-cmpl--full-cache)
+         (org-mono-files (list file1 file2)))
+    (org-mono--full-cache)
     (should (find-buffer-visiting file1))
     (should (not (find-buffer-visiting file2)))
-    (should (equal (hash-table-keys org-headline-cmpl--cache)
+    (should (equal (hash-table-keys org-mono--cache)
                    `(,file1 ,file2)))
     (should (equal
              (mapcar (lambda (components)
                        (alist-get :headline components))
                      (gethash file1
-                              org-headline-cmpl--cache))
+                              org-mono--cache))
              '("H1" "H1.1" "H2" "H3")))
     (should (equal
              (mapcar (lambda (components)
                        (alist-get :headline components))
                      (gethash file2
-                              org-headline-cmpl--cache))
+                              org-mono--cache))
              '("h1" "h1.1" "h2" "h3")))
     (let ((backlinks (alist-get :back-links
                         (get-component-from-name (gethash file1
-                                                          org-headline-cmpl--cache)
+                                                          org-mono--cache)
                                                  "H2"))))
       (should (member
                `((:file . ,file2)
@@ -115,7 +115,7 @@
   (let* ((file (org-file-1))
          (buffer (find-file-noselect file))
          (headlines-components
-          (org-headline-cmpl--headlines-components buffer))
+          (org-mono--headlines-components buffer))
          (h3-components 
           (get-component-from-name headlines-components "H1"))
          (file-link (car
@@ -123,7 +123,7 @@
                                    (equal (buffer-file-name buffer)
                                           (alist-get :file file-link)))
                                  (alist-get :file-links h3-components))))
-         (marker (org-headline-cmpl--file-link-to-marker file-link)))
+         (marker (org-mono--file-link-to-marker file-link)))
   (should (equal
            (marker-buffer marker)
            buffer))
@@ -137,7 +137,7 @@
   (let* ((file (org-file-1))
          (buffer (find-file-noselect file))
          (headlines-components
-          (org-headline-cmpl--headlines-components buffer)))
+          (org-mono--headlines-components buffer)))
     (should (equal
              (get-component-from-name headlines-components "H1")
              `((:level . 1)
