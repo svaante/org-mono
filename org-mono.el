@@ -337,13 +337,15 @@ If KEYS are specified KEYS are alisted and then applied to FN."
 
 (defun org-mono--list-backlinks (headline-components)
   "List all back links for HEADLINE-COMPONENTS."
-  (let ((source-file (alist-get :file headline-components))
-        (source-headline (alist-get :headline headline-components)))
-    (org-mono--headlines-list-with-filter
-     (lambda (file headline)
-       (and (equal file source-file)
-            (equal headline source-headline)))
-     :file :headline)))
+  (let ((back-links (mapcar (lambda (comp)
+                              (cons (alist-get :file comp)
+                                    (alist-get :headline comp)))
+                            (alist-get :back-links headline-components))))
+    (seq-filter (lambda (comp)
+                  (member (cons (alist-get :file comp)
+                                (alist-get :headline comp))
+                          back-links))
+                (org-mono--list-headlines 'list))))
 
 (defmacro org-mono--with-headline (headline &rest body)
   "Macro for using executing BODY at point of HEADLINE."
@@ -358,7 +360,8 @@ If KEYS are specified KEYS are alisted and then applied to FN."
            (widen)
            (goto-char position)
            (org-show-subtree)
-           ,@body)))
+           ,@body
+           (org-mono--schedule-cache-timer))))
      (when not-opened
        (kill-buffer buffer))))
 
@@ -450,7 +453,11 @@ For docs on the rest of the arguments see `completing-read'"
   "Creates an org-capture-file+function from HEADLINE see
 `org-capture-templates'."
   (lambda ()
-    (let ((marker (org-mono--file-link-to-marker headline)))
+    (let* ((headline (if (stringp headline) ;; FIX: this should be nicer
+                         `((:headline . ,headline)
+                           (:file .     ,(car (org-mono--get-files))))
+                       headline))
+           (marker (org-mono--file-link-to-marker headline t)))
       (set-buffer (org-capture-target-buffer (buffer-file-name
                                               (marker-buffer marker))))
       (goto-char (marker-position marker))

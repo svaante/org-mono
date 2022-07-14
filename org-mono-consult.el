@@ -11,6 +11,7 @@
 (defcustom org-mono-consult-sources
   '(org-mono-consult--source-headline
     org-mono-consult--source-todo
+    org-mono-consult--source-todo-in-progress
     org-mono-consult--source-top-level)
   "Sources used by `org-mono-consult-completing-read'."
   :type '(repeat symbol))
@@ -46,11 +47,26 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :state    ,#'org-mono-consult--headline-state
     :default  nil
-    :hidden t
+    :hidden   t
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand) (alist-get :todo cand)))))
     "Todo headline candidate source for
+`org-mono-consult-completing-read'.")
+
+(defvar org-mono-consult--source-todo-in-progress
+  `(:name     "Todos in-progress"
+    :narrow   ?i
+    :category org-mono
+    :state    ,#'org-mono-consult--headline-state
+    :default  nil
+    :hidden   t
+    :items
+    ,(lambda () (org-mono--query
+                 (lambda (cand)
+                   (let ((todo (alist-get :todo cand)))
+                     (and todo (not (equal todo "DONE"))))))))
+    "Not in done todo headline candidate source for
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level
@@ -59,11 +75,26 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :state    ,#'org-mono-consult--headline-state
     :default  nil
-    :hidden t
+    :hidden   t
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand) (eq (alist-get :level cand) 1)))))
     "Top level headline candidate source for
+`org-mono-consult-completing-read'.")
+
+(defvar org-mono-consult--source-special
+  `(:name            "Special"
+    :narrow          ?s
+    :category        org-mono
+    :state           ,#'org-mono-consult--headline-state
+    :default         t
+    :only-full-table t
+    :items
+    ,(lambda ()
+       (list
+        (format-time-string "Journal %Y-%m-%d")
+        (concat "Project: " (consult--project-name default-directory)))))
+  "Top level headline candidate source for
 `org-mono-consult-completing-read'.")
 
 (defun org-mono-consult--position (headline &optional find-file)
@@ -98,47 +129,48 @@ FIND-FILE is the file open function, defaulting to `find-file'."
         (buffers-to-kill)
         (buffers-reset-info))
     (lambda (state cand)
-      (cond ((and (eq state 'preview)
-                  cand)
-             ;; FIX: Should handle when candidate is a non-match
-             (let* ((headline (gethash cand org-mono-consult--hash-map))
-                    (not-opened (null (find-buffer-visiting (alist-get :file headline))))
-                    (buffer (find-file-noselect (alist-get :file headline))))
-               ;; Preview cand
-               (switch-to-buffer buffer)
-               (if not-opened
-                   (push buffer buffers-to-kill)
-                 (unless (or (seq-some (lambda (buffer-reset-info)
-                                         (eq buffer
-                                             (alist-get :buffer buffer-reset-info)))
-                                       buffers-reset-info)
-                             (member buffer buffers-to-kill))
-                   (push `((:buffer . ,buffer)
-                           (:region . ,(when (org-buffer-narrowed-p)
-                                         (cons (point-min) (point-max))))
-                           (:position . ,(point)))
-                         buffers-reset-info)))
-               (widen)
-               (goto-char (marker-position
-                           (org-mono--file-link-to-marker headline)))
-               (when org-mono-narrow-after-goto
-                 (org-narrow-to-subtree))
-               (org-show-subtree)))
-            ((and (eq state 'preview)
-                  (null cand))
-             (progn 
-               (switch-to-buffer reset-buffer)
-               (org-mono-consult--restore-buffer
-                (seq-find (lambda (buffer-reset-info)
-                            (eq reset-buffer
-                                (alist-get :buffer buffer-reset-info)))
-                          buffers-reset-info))))
-            ((eq state 'exit)
-             (seq-do #'kill-buffer buffers-to-kill)
-             (seq-do #'org-mono-consult--restore-buffer buffers-reset-info)
-             (switch-to-buffer reset-buffer))))))
+      (let ((headline (gethash cand org-mono-consult--hash-map)))
+        (cond ((and (eq state 'preview)
+                    headline)
+               ;; FIX: Should handle when candidate is a non-match
+               (let* ((not-opened (null (find-buffer-visiting (alist-get :file headline))))
+                      (buffer (find-file-noselect (alist-get :file headline))))
+                 ;; Preview cand
+                 (switch-to-buffer buffer)
+                 (if not-opened
+                     (push buffer buffers-to-kill)
+                   (unless (or (seq-some (lambda (buffer-reset-info)
+                                           (eq buffer
+                                               (alist-get :buffer buffer-reset-info)))
+                                         buffers-reset-info)
+                               (member buffer buffers-to-kill))
+                     (push `((:buffer . ,buffer)
+                             (:region . ,(when (org-buffer-narrowed-p)
+                                           (cons (point-min) (point-max))))
+                             (:position . ,(point)))
+                           buffers-reset-info)))
+                 (widen)
+                 (goto-char (marker-position
+                             (org-mono--file-link-to-marker headline)))
+                 (when org-mono-narrow-after-goto
+                   (org-narrow-to-subtree))
+                 (org-show-subtree)))
+              ((and (eq state 'preview)
+                    (null cand))
+               (progn 
+                 (switch-to-buffer reset-buffer)
+                 (org-mono-consult--restore-buffer
+                  (seq-find (lambda (buffer-reset-info)
+                              (eq reset-buffer
+                                  (alist-get :buffer buffer-reset-info)))
+                            buffers-reset-info))))
+              ((eq state 'exit)
+               (seq-do #'kill-buffer buffers-to-kill)
+               (seq-do #'org-mono-consult--restore-buffer buffers-reset-info)
+               (switch-to-buffer reset-buffer)))))))
 
 ;; FIX: I am to lazy to figure out why this is happening
+;; this is definitely going to break someday
 (defun org-mono-consult--annotate (table)
   "Create annotatio function for `org-mono-consult-completing-read'
 compleations. TABLE consist of the hash-table.
@@ -148,9 +180,9 @@ See `org-mono--completion-table'"
       (funcall annotate-fn (apply #'concat (butlast (split-string candidate "") 2))))))
 
 (defun org-mono-consult-completing-read (prompt
-                                                  &optional
-                                                  hash-table
-                                                  require-match)
+                                         &optional
+                                         hash-table
+                                         require-match)
   "Consult multi source replacment for `org-mono-completing-read'
 HASH-TABLE is used when the total set of precomputet headlines candidates is not
 preferable. See `org-mono-consult-completing-read' how HASH-TABLE is
@@ -158,9 +190,12 @@ constructed.
 For docs on the rest of the arguments see `completing-read'"
   (setq org-mono-consult--hash-map
         (or hash-table (org-mono--completion-table)))
-  (let* (;(consult-after-jump-hook (append consult-after-jump-hook
-         ;                                 '(org-mono-consult--after-jump)))
-         (match (consult--multi org-mono-consult-sources
+  (let* ((sources (if hash-table
+                      (seq-filter (lambda (source)
+                                    (not (plist-get source :only-full-table)))
+                                  org-mono-consult-sources)
+                    org-mono-consult-sources))
+         (match (consult--multi sources
                                 :require-match require-match
                                 :prompt prompt
                                 :annotate (org-mono-consult--annotate

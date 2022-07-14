@@ -1,0 +1,51 @@
+* Introduction
+
+* Installation and setup
+This is what my current setup looks like
+#+begin_src emacs-lisp
+  (use-package org-mono
+    :diminish
+    :straight (org-mono :local-repo "~/Workspace/org-headline-cmpl")
+    :config
+
+
+    (setq org-mono-files '("~/org/notes.org"
+                           "~/org/todo.org"
+                           "~/org/books.org"))
+
+    (setq org-mono-capture-default '(entry
+                                     (file "~/org/notes.org")
+                                     "* %(org-mono-dwim-headline)\n  %?"))
+    (setq org-mono-capture-templates '(("t" "Todo" "** TODO %?")
+                                       ("n" "Sub note" "** %?")
+                                       ("l" "Link" "%l %?")))
+
+    (setq org-mono-narrow-after-goto t)
+    (setq org-mono-capture-narrow t)
+
+    (leader-key "on" 'org-mono-dwim)
+    (global-org-mono-mode))
+
+  (embark-define-keymap embark-org-mono-actions
+    "Keymap for actions for org-mono."
+    ("t" org-mono-todo)
+    ("k" org-mono-delete-headline)
+    ("c" org-mono-capture-under-headline)
+    ("b" org-mono-goto-back-links))
+
+  (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
+
+  (use-package org-mono-consult
+    :straight (org-mono-consult :local-repo "~/Workspace/org-headline-cmpl")
+    :config
+    (setq org-mono-consult--source-top-level (plist-put org-mono-consult--source-top-level
+                                                        :default t))
+    (setq org-mono-consult--source-headline (plist-put org-mono-consult--source-headline
+                                                       :default nil))
+    (add-to-list 'org-mono-consult-sources
+                 org-mono-consult--source-special)
+
+    (setq org-mono-completing-read-fn 'org-mono-consult-completing-read))
+#+end_src
+
+
