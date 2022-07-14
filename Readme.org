@@ -1,11 +1,16 @@
 * Introduction
+Org-mono provides a monolithic headline completion interface to your org files.
 
 * Installation and setup
-This is what my current setup looks like
 #+begin_src emacs-lisp
   (use-package org-mono
     :diminish
-    :straight (org-mono :local-repo "~/Workspace/org-headline-cmpl")
+    :straight (org-mono :type git :host github :repo "svaante/org-mono")
+    :bind (("M-o o" . org-mono-dwim)
+           ("M-o t" . org-mono-todo)
+           ("M-o k" . org-mono-delete-headline)
+           ("M-o c" . org-mono-capture-under-headline)
+           ("M-o b" . org-mono-goto-back-links))
     :config
 
 
@@ -24,19 +29,21 @@ This is what my current setup looks like
     (setq org-mono-capture-narrow t)
 
     (leader-key "on" 'org-mono-dwim)
+    ;; Optionally if embark is installed
+    ;; (embark-define-keymap embark-org-mono-actions
+    ;;   "Keymap for actions for org-mono."
+    ;;   ("t" org-mono-todo)
+    ;;   ("k" org-mono-delete-headline)
+    ;;   ("c" org-mono-capture-under-headline)
+    ;;   ("b" org-mono-goto-back-links))
+
+    ;; (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
     (global-org-mono-mode))
 
-  (embark-define-keymap embark-org-mono-actions
-    "Keymap for actions for org-mono."
-    ("t" org-mono-todo)
-    ("k" org-mono-delete-headline)
-    ("c" org-mono-capture-under-headline)
-    ("b" org-mono-goto-back-links))
-
-  (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
-
+  ;; Optionally if consult is used
   (use-package org-mono-consult
-    :straight (org-mono-consult :local-repo "~/Workspace/org-headline-cmpl")
+    :after consult
+    :straight (org-mono-consult :type git :host github :repo "svaante/org-mono")
     :config
     (setq org-mono-consult--source-top-level (plist-put org-mono-consult--source-top-level
                                                         :default t))
