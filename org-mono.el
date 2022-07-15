@@ -4,6 +4,7 @@
 (require 'org)
 (require 'ol)
 (require 'org-capture)
+(require 'org-element)
 (require 'timer)
 
 (defgroup org-mono nil
@@ -81,8 +82,9 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :group 'org-mono)
 
 (defcustom org-mono-annotation-format
-  `((:file org-column 30 file-name-nondirectory)
-    (:level org-property-value 2 (lambda (level) (make-string level ?*)))
+  `((:file org-column 10 file-name-nondirectory)
+    (:level org-property-value 2 ,(lambda (level) (make-string level ?*)))
+    (:timestamp org-date 16 identity)
     (:todo org-todo 4 identity)
     (:back-links org-level-4 50 ,(lambda (back-links)
                                     (string-join
@@ -133,12 +135,13 @@ If function return default candidate."
 (defun org-mono--full-cache (&optional files)
   "Cache all files in `org-mono-files'."
   (let* ((files (or files (org-mono--get-files)))
-         (files-to-cache (seq-filter (lambda (filename)
-                                       (when (or org-mono-all-org-files
-                                                 (member filename (org-mono--get-files)))))
-                                     files)))
+         (files-to-cache (seq-filter
+                          (lambda (filename)
+                            (or org-mono-all-org-files
+                                (member filename (org-mono--get-files))))
+                          files)))
     (clrhash org-mono--cache)
-    (seq-do #'org-mono--cache-file files)
+    (seq-do #'org-mono--cache-file files-to-cache)
     (org-mono--add-backlinks-to-cache)))
 
 (defun org-mono--cache-file (file &optional rebuild-backlinks)
@@ -212,7 +215,9 @@ not found. Use BUFFER marker should be created in BUFFER."
   "Creates base for headline components at point."
   (ignore-error user-error
     (pcase-let ((`(,level ,_ ,todo ,prio ,headline ,tags)
-                 (org-heading-components)))
+                 (org-heading-components))
+                (timestamp
+                 (org-mono--get-timestamp-at-headline)))
       `((:level . ,level)
         (:todo  . ,todo)
         (:prio  . ,prio)
@@ -220,6 +225,7 @@ not found. Use BUFFER marker should be created in BUFFER."
         (:tags . ,tags)
         (:file-links . ,(org-mono--heading-org-links))
         (:back-links . ,nil)
+        (:timestamp . ,timestamp)
         (:file . ,(buffer-file-name (current-buffer)))))))
 
 (defun org-mono--next-headline-point ()
@@ -228,7 +234,7 @@ not found. Use BUFFER marker should be created in BUFFER."
     (save-mark-and-excursion
       (unless (eq (condition-case nil
                       (org-back-to-heading t)
-                    (ignore-error 'before-first-heading))
+                    (error 'before-first-heading))
                   'before-first-heading)
         ;; We are standing at the start of a headline
         (forward-char))
@@ -347,11 +353,12 @@ If KEYS are specified KEYS are alisted and then applied to FN."
                           back-links))
                 (org-mono--list-headlines 'list))))
 
+;; FIX: this should not always run hooks
 (defmacro org-mono--with-headline (headline &rest body)
   "Macro for using executing BODY at point of HEADLINE."
   (declare (indent 1) (debug t))
   `(let* ((not-opened (null (find-buffer-visiting (alist-get :file ,headline))))
-          (marker (org-mono--file-link-to-marker headline))
+          (marker (org-mono--file-link-to-marker ,headline))
           (buffer (marker-buffer marker))
           (position (marker-position marker)))
      (with-current-buffer buffer
@@ -360,10 +367,40 @@ If KEYS are specified KEYS are alisted and then applied to FN."
            (widen)
            (goto-char position)
            (org-show-subtree)
-           ,@body
-           (org-mono--schedule-cache-timer))))
-     (when not-opened
-       (kill-buffer buffer))))
+           (prog1 ,@body
+             (org-mono--schedule-cache-timer)
+             (when not-opened
+               (kill-buffer buffer))))))))
+
+(defun org-mono--first-timestamp-mark (components)
+  "Find mark for first timestamp under and within COMPONENTS."
+  (org-mono--with-headline components
+    (save-match-data
+      (let* ((end (or (org-mono--next-headline-point) (point-max)))
+             (timestamp-point (re-search-forward
+                               org-element--timestamp-regexp
+                               end
+                               t)))
+        (when timestamp-point
+          (goto-char (match-beginning 0))
+          (point-marker))))))
+
+(defun org-mono--get-timestamp-at-headline ()
+  "Get org timestamp string under headline at point."
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (widen)
+        (org-show-subtree)
+        (let* ((end (or (org-mono--next-headline-point) (point-max)))
+               (timestamp-point (re-search-forward
+                                 org-element--timestamp-regexp
+                                 end
+                                 t)))
+          (when timestamp-point
+            (buffer-substring-no-properties
+             (match-beginning 0)
+             (match-end 0))))))))
 
 ;; Completions
 (defun org-mono--annotate (table)

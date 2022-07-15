@@ -12,6 +12,8 @@
       (newline)
       (insert "** H1.1")
       (newline)
+      (insert "<2022-03-28 Mon>")
+      (newline)
       (insert "* TODO H2")
       (newline)
       (insert "* H3")
@@ -67,6 +69,7 @@
                (:file-links . (((:file . ,(buffer-file-name buffer))
                                 (:headline . "H2"))))
                (:back-links . nil)
+               (:timestamp . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H1.1")
@@ -148,6 +151,7 @@
                (:file-links . (((:file . ,(buffer-file-name buffer))
                                 (:headline . "H2"))))
                (:back-links . nil)
+               (:timestamp . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H1.1")
@@ -158,6 +162,7 @@
                (:tags . nil)
                (:file-links . nil)
                (:back-links . nil)
+               (:timestamp . "<2022-03-28 Mon>")
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H2")
@@ -168,6 +173,7 @@
                (:tags . nil)
                (:file-links . nil)
                (:back-links . nil)
+               (:timestamp . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H3")
@@ -183,4 +189,31 @@
                                ((:file . ,(buffer-file-name buffer))
                                 (:headline . "H2"))))
                (:back-links . nil)
+               (:timestamp . nil)
                (:file . ,(buffer-file-name buffer)))))))
+
+(ert-deftest timestamp-to-marker-test ()
+  (let* ((file (org-file-1))
+         (buffer (find-file-noselect file))
+         (components `((:headline . "H1.1")
+                       (:file . ,(buffer-file-name buffer))))
+         (timestamp-mark (org-mono--first-timestamp-mark
+                          components)))
+    (should timestamp-mark)
+    (should (equal
+             buffer
+             (marker-buffer timestamp-mark)))
+    (should (equal
+             39
+             (marker-position timestamp-mark)))
+    (org-mono-goto components)
+    (should (equal
+             "<2022-03-28 Mon>"
+             (org-mono--get-timestamp-at-headline)))
+
+    (org-mono-goto `((:headline . "H1")
+                     (:file . ,(buffer-file-name buffer))))
+    (should (equal
+             nil
+             (org-mono--get-timestamp-at-headline)))))
+
