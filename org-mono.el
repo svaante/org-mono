@@ -274,18 +274,24 @@ not found. Use BUFFER marker should be created in BUFFER."
              t)
         (match-beginning 0)))))
 
-(defun org-mono--get-parents-at-point (&optional starting-point)
+(defun org-mono--get-parents-at-point (&optional starting-point )
   (org-with-wide-buffer
    (save-mark-and-excursion
      (when starting-point
        (goto-char starting-point))
-     (pcase-let ((`(,parent-level) (org-heading-components)))
+     (pcase-let ((`(,child-level) (org-heading-components)))
        (when-let ((parent-point (org-mono--prev-headline-point)))
          (goto-char parent-point)
-         (pcase-let ((`(,child-level ,_ ,_ ,_ ,headline) (org-heading-components)))
-           (when (> parent-level child-level)
+         (pcase-let ((`(,parent-level ,_ ,_ ,_ ,headline)
+                      (org-heading-components)))
+           (cond
+            ((= child-level 1)
+             nil)
+            ((> child-level parent-level)
              (cons headline
-                   (org-mono--get-parents-at-point parent-point)))))))))
+                   (org-mono--get-parents-at-point parent-point)))
+            (t
+             (org-mono--get-parents-at-point parent-point)))))))))
 
 (defun org-mono--heading-org-links ()
   "Return current headlines org links as a list of alists containing :file and
