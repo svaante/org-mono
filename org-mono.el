@@ -776,9 +776,11 @@ This mode also enables completion at point and eldoc documentation."
   "If `org-mono-mode' should be enabled for buffer.
 Based on `org-mono-all-org-files' or if buffer is specified by
 `org-mono-files'."
-  (if org-mono-all-org-files
-      (when (bound-and-true-p org-mode)
-        (org-mono-mode))
+  (if (and org-mono-all-org-files
+           buffer-file-name
+           (equal (file-name-extension buffer-file-name)
+                  "org"))
+      (org-mono-mode)
     (when (member buffer-file-name (org-mono--get-files))
       (org-mono-mode))))
 
