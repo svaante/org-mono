@@ -77,6 +77,12 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :type 'integer
   :group 'org-mono)
 
+(defcustom org-mono-candidate-with-path nil
+  "Headline parents as prefix to candidate doing `completing-read'."
+  :type '(choice (const :tag "Suffix candidates with path" t)
+                 (const :tag "No suffix" nil))
+  :group 'org-mono)
+
 (defcustom org-mono-completion-at-point-suffix nil
   "Add file name suffix when doing `completion-at-point'."
   :type '(choice (const :tag "Suffix completions with file" file)
@@ -336,6 +342,8 @@ This is specified with FORMAT as 'list or 'hash."
 The key for COMPONENTS is different depending in if CAPF is t or TRY-NBR which
 should only used by `org-mono--completion-table-add' itself."
   (let* ((headline (alist-get :headline components))
+         ;; Add file prefix if `capf' and `org-mono-completion-at-point-suffix'
+         ;; is file
          (base-key (if (and capf
                             (eq 'file org-mono-completion-at-point-suffix))
                        (format "%s:%s"
@@ -343,6 +351,15 @@ should only used by `org-mono--completion-table-add' itself."
                                (file-name-nondirectory
                                 (alist-get :file components)))
                      headline))
+         ;; Add path prefix is not in `capf' and
+         ;; `org-mono-candidate-with-path'
+         (base-key (if (and (not capf)
+                            org-mono-candidate-with-path)
+                       (string-join
+                        (reverse
+                         (cons base-key (alist-get :parents components)))
+                        "/")
+                       base-key))
          (key (concat 
                (truncate-string-to-width base-key
                                          org-mono-completion-candidate-max-length
