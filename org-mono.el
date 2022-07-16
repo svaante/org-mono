@@ -18,7 +18,7 @@ Value could either be function that returns a list of files or a list of files."
                  (function :tag "Function that return list of files"))
   :group 'org-mono)
 
-(defcustom org-mono-capture-default
+(defcustom org-mono-capture-dwim-template
   '(entry
     (file "~/org/notes.org")
     "* %(org-mono-dwim-headline)\n  %?")
@@ -556,15 +556,15 @@ For docs on the rest of the arguments see `completing-read'"
       (gethash match hash-table match))))
 
 ;; Capture
-(defvar org-headline--headline-injected-headline nil
-  "Used to save candiate match and inject into org capture template.")
+(defvar org-mono--injected-headline-str nil
+  "Used to save candidate match str and inject into org capture templates.")
 
 (defvar org-mono--injected-headline nil
   "Used to save candidate match and inject into org capture templates.")
 
 (defun org-mono-dwim-headline ()
   "Returns the headline string for the last `org-mono-dwim' non-match."
-  org-headline--headline-injected-headline)
+  org-mono--injected-headline-str)
 
 (defun org-mono-capture-parent-stars ()
   (unless org-mono--injected-headline
@@ -595,13 +595,13 @@ For docs on the rest of the arguments see `completing-read'"
 
 (defun org-headline--dwim-capture (headline-str)
   "Captures a new headline under new `HEADLINE-STR` with template
-`org-mono-capture-default'."
-  (unless org-mono-capture-default
-   (user-error "org-mono-capture-default is nil, specify default org-mono capture template"))
+`org-mono-capture-dwim-template'."
+  (unless org-mono-capture-dwim-template
+   (user-error "org-mono-capture-dwim-template is nil, specify default org-mono capture template"))
   (let ((org-capture-templates (list (append
                                       '("a" "")
-                                      org-mono-capture-default))))
-    (setq org-headline--headline-injected-headline headline-str)
+                                      org-mono-capture-dwim-template))))
+    (setq org-mono--injected-headline-str headline-str)
     (org-capture nil "a")))
 
 ;; Eldoc integration
