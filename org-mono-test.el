@@ -14,6 +14,8 @@
       (newline)
       (insert "<2022-03-28 Mon>")
       (newline)
+      (insert "*** H1.1.1")
+      (newline)
       (insert "* TODO H2")
       (newline)
       (insert "* H3")
@@ -70,6 +72,7 @@
                                 (:headline . "H2"))))
                (:back-links . nil)
                (:timestamp . nil)
+               (:parents . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H1.1")
@@ -90,7 +93,7 @@
                        (alist-get :headline components))
                      (gethash file1
                               org-mono--cache))
-             '("H1" "H1.1" "H2" "H3")))
+             '("H1" "H1.1" "H1.1.1" "H2" "H3")))
     (should (equal
              (mapcar (lambda (components)
                        (alist-get :headline components))
@@ -152,6 +155,7 @@
                                 (:headline . "H2"))))
                (:back-links . nil)
                (:timestamp . nil)
+               (:parents . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H1.1")
@@ -163,6 +167,19 @@
                (:file-links . nil)
                (:back-links . nil)
                (:timestamp . "<2022-03-28 Mon>")
+               (:parents . ("H1"))
+               (:file . ,(buffer-file-name buffer)))))
+    (should (equal
+             (get-component-from-name headlines-components "H1.1.1")
+             `((:level . 3)
+               (:todo . nil)
+               (:prio . nil)
+               (:headline . "H1.1.1")
+               (:tags . nil)
+               (:file-links . nil)
+               (:back-links . nil)
+               (:timestamp . nil)
+               (:parents . ("H1.1" "H1"))
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H2")
@@ -174,6 +191,7 @@
                (:file-links . nil)
                (:back-links . nil)
                (:timestamp . nil)
+               (:parents . nil)
                (:file . ,(buffer-file-name buffer)))))
     (should (equal
              (get-component-from-name headlines-components "H3")
@@ -190,6 +208,7 @@
                                 (:headline . "H2"))))
                (:back-links . nil)
                (:timestamp . nil)
+               (:parents . nil)
                (:file . ,(buffer-file-name buffer)))))))
 
 (ert-deftest timestamp-to-marker-test ()
@@ -217,3 +236,18 @@
              nil
              (org-mono--get-timestamp-at-headline)))))
 
+
+(ert-deftest headlines-with-children-test ()
+  (let* ((file (org-file-1))
+         (buffer (find-file-noselect file))
+         (headlines-components
+          (org-mono--headlines-components buffer))
+         ;; Populate the cache
+         (_ (clrhash org-mono--cache))
+         (_ (puthash "somefile" headlines-components org-mono--cache))
+         (headlines-with-children (org-mono--headlines-with-children)))
+    (should (equal
+             '("H1" "H1.1")
+             (mapcar (lambda (comp)
+                       (alist-get :headline comp))
+                     headlines-with-children)))))
