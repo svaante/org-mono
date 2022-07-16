@@ -64,6 +64,12 @@ indexing of headlines in current buffer."
                  (const :tag "Do not narrow" nil))
   :group 'org-mono)
 
+(defcustom org-mono-auto-save t
+  "After org-mono applies changes to buffer, auto save before
+closing."
+  :type '(choice (const :tag "Auto save" t)
+                 (const :tag "Prompt user for save" nil)))
+
 (defcustom org-mono-cache-delay 2
   "Delay before re-indexing current buffer.
 Increasing the value of `org-mono-cache-delay' should improve performance."
@@ -370,6 +376,9 @@ If KEYS are specified KEYS are alisted and then applied to FN."
            (prog1 ,@body
              (org-mono--schedule-cache-timer)
              (when not-opened
+               (when (and org-mono-auto-save
+                          (buffer-modified-p))
+                 (save-buffer))
                (kill-buffer buffer))))))))
 
 (defun org-mono--first-timestamp-mark (components)
