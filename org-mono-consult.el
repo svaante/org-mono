@@ -16,6 +16,17 @@
   "Sources used by `org-mono-consult-completing-read'."
   :type '(repeat symbol))
 
+(defun org-mono-consult-special-entries-default-fn ()
+  (list
+   (format-time-string "Journal %Y-%m-%d")))
+
+(defcustom org-mono-consult-special-entries-fn
+  #'org-mono-consult-special-entries-default-fn
+  "Function to generate special entires
+See `org-mono-consult-special-entries-default-fn' and
+`org-mono-consult--source-special'."
+  :type 'function)
+
 (defvar org-mono-consult--hash-map (make-hash-table)
   "Local variable used to generate candidates for
 `org-mono-consult-sources'")
@@ -89,12 +100,11 @@ See `org-mono--headline-components' for components structure."
     :state           ,#'org-mono-consult--headline-state
     :default         t
     :only-full-table t
+    :items ,(lambda () (funcall org-mono-consult-special-entries-fn)))
+  "Special candidate sourcw source for
+`org-mono-consult-completing-read'.")
     :items
     ,(lambda ()
-       (list
-        (format-time-string "Journal %Y-%m-%d")
-        (concat "Project: " (consult--project-name default-directory)))))
-  "Top level headline candidate source for
 `org-mono-consult-completing-read'.")
 
 (defun org-mono-consult--position (headline &optional find-file)
