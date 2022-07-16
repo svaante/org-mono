@@ -699,8 +699,9 @@ Note this only work if current file is indexed in cache."
     (let* ((prompt (format "Back links for *%s*: " (alist-get :headline match)))
            (table (org-mono--completion-table
                    (org-mono--list-backlinks match))))
-      (when table
-        (funcall org-mono-completing-read-fn prompt table t)))))
+      (unless table
+        (user-error "No back links for *%s*"  (alist-get :headline match)))
+      (funcall org-mono-completing-read-fn prompt table t))))
   (if internal-link
       (org-mono-goto internal-link)
     (user-error "Unable to derive current headline or missing internal links")))
