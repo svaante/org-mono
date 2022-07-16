@@ -226,7 +226,8 @@ not found. Use BUFFER marker should be created in BUFFER."
     (pcase-let ((`(,level ,_ ,todo ,prio ,headline ,tags)
                  (org-heading-components))
                 (timestamp
-                 (org-mono--get-timestamp-at-headline)))
+                 (org-mono--get-timestamp-at-headline))
+                (parents (org-mono--get-parents-at-point)))
       `((:level . ,level)
         (:todo  . ,todo)
         (:prio  . ,prio)
@@ -235,6 +236,7 @@ not found. Use BUFFER marker should be created in BUFFER."
         (:file-links . ,(org-mono--heading-org-links))
         (:back-links . ,nil)
         (:timestamp . ,timestamp)
+        (:parents . ,parents)
         (:file . ,(buffer-file-name (current-buffer)))))))
 
 (defun org-mono--next-headline-point ()
@@ -252,6 +254,29 @@ not found. Use BUFFER marker should be created in BUFFER."
              nil
              t)
         (match-beginning 0)))))
+
+(defun org-mono--prev-headline-point ()
+  "Get point of prev headline."
+  (save-match-data
+    (save-mark-and-excursion
+      (when (re-search-backward
+             (org-mono--headline-re)
+             nil
+             t)
+        (match-beginning 0)))))
+
+(defun org-mono--get-parents-at-point (&optional starting-point)
+  (org-with-wide-buffer
+   (save-mark-and-excursion
+     (when starting-point
+       (goto-char starting-point))
+     (pcase-let ((`(,parent-level) (org-heading-components)))
+       (when-let ((parent-point (org-mono--prev-headline-point)))
+         (goto-char parent-point)
+         (pcase-let ((`(,child-level ,_ ,_ ,_ ,headline) (org-heading-components)))
+           (when (> parent-level child-level)
+             (cons headline
+                   (org-mono--get-parents-at-point parent-point)))))))))
 
 (defun org-mono--heading-org-links ()
   "Return current headlines org links as a list of alists containing :file and
@@ -413,6 +438,46 @@ If KEYS are specified KEYS are alisted and then applied to FN."
             (buffer-substring-no-properties
              (match-beginning 0)
              (match-end 0))))))))
+
+;; FIX: this is a bit messy
+(defun org-mono--headlines-with-children ()
+  "Get all headlines with children"
+  (let ((values (hash-table-values (org-mono--list-headlines 'hash))))
+    (mapcan
+     (lambda (components-in-file)
+       (delete-dups
+        (cdr
+         (seq-reduce
+          (lambda (cands-res components)
+            (let* ((cands (car cands-res))
+                   (res (cdr cands-res))
+                   (level (alist-get :level components))
+                   (parents (alist-get :parents components))
+                   (cand-headlines (mapcar (lambda (x)
+                                             (alist-get :headline x))
+                                           cands)))
+              (cons
+               (cons components
+                     ;; Drop the difference of current `cands' length and `level'
+                     (seq-drop cands (max (- (1+ (length cands)) level) 0)))
+               (append res
+                       (when (equal cand-headlines parents)
+                         cands)))))
+          components-in-file
+          nil))))
+     values)))
+
+(defun org-mono--children-of-headline (components)
+  "Get all children for COMPONENTS headline."
+  (let* ((values (gethash (alist-get :file components)
+                          (org-mono--list-headlines 'hash)))
+         (candidates (cdr (seq-drop-while (lambda (comp)
+                                            (not (equal comp components)))
+                                          values)))
+         (level (alist-get :level components)))
+    (seq-take-while (lambda (comp)
+                      (< level (alist-get :level comp)))
+                    candidates)))
 
 ;; Completions
 (defun org-mono--annotate (table)
@@ -599,6 +664,27 @@ Note this only work if current file is indexed in cache."
                 . ,properties)))
           org-mono-capture-templates)))
     (call-interactively #'org-capture)))
+
+(defun org-mono-goto-headline-child (headline child)
+  "Goto CHILD of HEADLINE."
+  (interactive
+   (list
+    (setq match
+          (funcall org-mono-completing-read-fn
+           "Headline with children: "
+           (org-mono--completion-table
+            (org-mono--headlines-with-children))
+           t))
+    (let* ((match-headline (alist-get :headline match))
+           (prompt (format "Children for *%s*: " match-headline))
+           (table (org-mono--completion-table
+                   (org-mono--children-of-headline match))))
+      (unless table
+        (user-error "No children for *%s*" match-headline))
+      (funcall org-mono-completing-read-fn prompt table t))))
+  (if child
+      (org-mono-goto child)
+    (user-error "Unable to derive current headline or child")))
 
 (defun org-mono-goto-back-links (headline internal-link)
   "Goto backlinks for HEADLINE."
