@@ -187,8 +187,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
 (defun org-mono-consult--restore-buffer (buffer-reset-info)
   "Restor buffer after preview."
   (when buffer-reset-info
-    (with-current-buffer (alist-get :buffer buffer-reset-info)
-      (widen)
+    (org-with-wide-buffer (alist-get :buffer buffer-reset-info)
       (when-let ((region (alist-get :region buffer-reset-info)))
         (apply #'narrow-to-region region))
       (goto-char (alist-get :position buffer-reset-info)))))
@@ -218,7 +217,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
                                (member buffer buffers-to-kill))
                      (push `((:buffer . ,buffer)
                              (:region . ,(when (org-buffer-narrowed-p)
-                                           (cons (point-min) (point-max))))
+                                           (list (point-min) (point-max))))
                              (:position . ,(point)))
                            buffers-reset-info)))
                  (widen)
