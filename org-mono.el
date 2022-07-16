@@ -763,6 +763,19 @@ Note this only work if current file is indexed in cache."
     (when org-mono-narrow-after-goto
       (org-narrow-to-subtree))))
 
+(defun org-mono-goto-other-window (headline)
+  "Goto HEADLINE in other window."
+  (interactive
+   (list
+    (funcall org-mono-completing-read-fn "Goto headline (other window): " nil t)))
+  (let ((marker (org-mono--file-link-to-marker headline)))
+    (switch-to-buffer-other-window (marker-buffer marker))
+    (widen)
+    (goto-char (marker-position marker))
+    (org-show-subtree)
+    (when org-mono-narrow-after-goto
+      (org-narrow-to-subtree))))
+
 (defun org-mono-todo (headline)
   "Cycle todo for HEADLINE."
   (interactive
