@@ -52,7 +52,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     ;; Optional if prefix headline candidate with path
     ;; (setq org-mono-candidate-with-path t)
 
-    ;; Optionally if embark is installed
+    ;; Optional if embark is installed
     ;; (embark-define-keymap embark-org-mono-actions
     ;;   "Keymap for actions for org-mono."
     ;;   ("o" org-mono-goto-other-window)
@@ -72,7 +72,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     :after consult
     :straight (org-mono-consult :type git :host github :repo "svaante/org-mono")
     :config
-    ;; Optionally if only top level headlines should be visable by default
+    ;; Optional if only top level headlines should be visable by default
     ;; We hide the all headlines source
     ;; (setq org-mono-consult--source-headline
     ;;       (plist-put org-mono-consult--source-headline :hidden t))
@@ -84,7 +84,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     ;;       (plist-put org-mono-consult--source-top-level-no-todos :hidden nil))
 
 
-    ;; Optionally if predified capture template names should be inserted
+    ;; Optional if predified capture template names should be inserted
     ;; (add-to-list 'org-mono-consult-sources
     ;;              org-mono-consult--source-special)
     ;; By default this gives us the special capture headline "Journal: %Y-%m-%d"
