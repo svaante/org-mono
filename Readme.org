@@ -1,5 +1,19 @@
+#+TITLE: Org-roam readme
+
 * Introduction
 Org-mono provides a monolithic headline completion interface to your org files.
+
+Org-mono is mainly a in memory cache for all your Org headlines, but it has a some other features slapped on to it as well.
+
++ completion with or without [[https://github.com/minad/consult][consult]] (but I highly recommend consult)
++ headline org headline link ~completion-at-point~
++ backlinks
++ capturing under headline
++ agenda ish view
++ simple managing of headlines (toggle todo keywords, add time-stamps and archiving)
+
+It's *highly* recommended to use this package with [[https://github.com/minad/consult][consult]] and [[https://github.com/oantolin/embark][embark]].
+
 
 * Installation and setup
 #+begin_src emacs-lisp
@@ -10,34 +24,43 @@ Org-mono provides a monolithic headline completion interface to your org files.
            ("M-o t" . org-mono-todo)
            ("M-o k" . org-mono-delete-headline)
            ("M-o c" . org-mono-capture-under-headline)
-           ("M-o b" . org-mono-goto-back-links))
+           ("M-o b" . org-mono-goto-back-links)
+           ("M-o d" . org-mono-time-stamp)
+           ("M-o C" . org-mono-goto-headline-child)
+           ("M-o a" . org-mono-archive)
+           ("M-o O" . org-mono-goto-otherwindow))
     :config
-
-
     (setq org-mono-files '("~/org/notes.org"
                            "~/org/todo.org"
                            "~/org/books.org"))
-
-    (setq org-mono-capture-default '(entry
-                                     (file "~/org/notes.org")
-                                     "* %(org-mono-dwim-headline)\n  %?"))
-    (setq org-mono-capture-templates '(("t" "Todo" "** TODO %?")
-                                       ("n" "Sub note" "** %?")
+    ;; Optional if org-mono should index all org files opened
+    ;; (setq org-mono-all-org-files t)
+    (setq org-mono-capture-dwim-template '(entry
+                                           (file "~/org/notes.org")
+                                           "* %(org-mono-dwim-headline)\n  %?"))
+    ;; Capture under headline
+    (setq org-mono-capture-templates '(("t" "Todo"
+                                        "%(org-mono-capture-parent-stars)* TODO %?")
+                                       ("n" "Sub note"
+                                        "%(org-mono-capture-parent-stars)* %?")
                                        ("l" "Link" "%l %?")))
 
     (setq org-mono-narrow-after-goto t)
-    (setq org-mono-capture-narrow t)
+    (setq org-mono-candidate-with-path t)
 
-    (leader-key "on" 'org-mono-dwim)
     ;; Optionally if embark is installed
     ;; (embark-define-keymap embark-org-mono-actions
     ;;   "Keymap for actions for org-mono."
+    ;;   ("o" org-mono-goto-other-window)
     ;;   ("t" org-mono-todo)
+    ;;   ("a" org-mono-archive)
     ;;   ("k" org-mono-delete-headline)
     ;;   ("c" org-mono-capture-under-headline)
+    ;;   ("C" org-mono-goto-headline-child)
+    ;;   ("d" org-mono-time-stamp)
     ;;   ("b" org-mono-goto-back-links))
-
     ;; (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
+
     (global-org-mono-mode))
 
   ;; Optionally if consult is used
@@ -45,14 +68,76 @@ Org-mono provides a monolithic headline completion interface to your org files.
     :after consult
     :straight (org-mono-consult :type git :host github :repo "svaante/org-mono")
     :config
-    (setq org-mono-consult--source-top-level (plist-put org-mono-consult--source-top-level
-                                                        :default t))
-    (setq org-mono-consult--source-headline (plist-put org-mono-consult--source-headline
-                                                       :default nil))
-    (add-to-list 'org-mono-consult-sources
-                 org-mono-consult--source-special)
+    ;; Optionally if only top level headlines should be visable by default
+    ;; We hide the all headlines source
+    ;; (setq org-mono-consult--source-headline
+    ;;       (plist-put org-mono-consult--source-headline :hidden t))
+    ;; Then "un-hide" the top-level source
+    ;; (setq org-mono-consult--source-top-level
+    ;;       (plist-put org-mono-consult--source-top-level :hidden nil))
+    ;; Or if we want to hide todos as well
+    ;; (setq org-mono-consult--source-top-level-no-todos
+    ;;       (plist-put org-mono-consult--source-top-level-no-todos :hidden nil))
+
+
+    ;; Optionally if predified capture template names should be inserted
+    ;; (add-to-list 'org-mono-consult-sources
+    ;;              org-mono-consult--source-special)
+    ;; By default this gives us the special capture headline "Journal: %Y-%m-%d"
+    ;; The following example gives us the Project: <project name> as well with `project.el`
+    ;; (setq org-mono-consult-special-entries-fn
+    ;;       (lambda ()
+    ;;         (append
+    ;;          (list (format-time-string "Journal %Y-%m-%d"))
+    ;;          (when (project-current)
+    ;;            (list
+    ;;             (format "Project %s"
+    ;;                     (file-name-nondirectory
+    ;;                      (directory-file-name
+    ;;                       (project-root (project-current))))))))))
 
     (setq org-mono-completing-read-fn 'org-mono-consult-completing-read))
 #+end_src
 
+** Similarities with other packages
+*** Org-agenda
+Org-mono can be used as a poor mans org-agenda with a nice modern interface (consult).
+org-mono-consult implements it's completing-read function with ~consult--multi~ which allows the user to create agenda feeds.
 
+Currently implemented sources:
++ ?i "Todos in-progress"
++ ?t "All todos"
++ ?d "All headlines timestamped today"
++ ?w "All headlines timestamped this week"
+
+This is of course just a very small subset of what ~org-agenda~ can do but it's nice to have some of it under the same completion interface.
+*** Org-roam
+You might say this sounds similar to [[https://github.com/org-roam/org-roam][org-roam]] and it can be through some simple configuration.
+
+#+begin_src emacs-lisp
+  (setq org-mono-files (lambda ()
+                         (cons "~/org/journal.org"
+                               (directory-files-recursively "~/org/notes/" ".*\\\.org$"))))
+
+  (defun org-mono--roamish-capture-function ()
+    (let ((file-name (format "~/org/notes/%s.org"
+                             (org-mono-dwim-headline))))
+      (set-buffer (org-capture-target-buffer file-name))
+      (goto-char (point-max))))
+
+  ;; Crucial that we add the headine in the capture template
+  ;; or org-mono wont find the file
+  (setq org-mono-capture-dwim-template
+        '(plain
+          (function org-mono--roamish-capture-function)
+          "#+TITLE: %(org-mono-dwim-headline)\n* %(org-mono-dwim-headline)\n%?"))
+#+end_src
+
+The configuration setup under [[Installation and setup]] creates new headlines as entries in under one file, to each their own.
+
+But if you are looking for an org-roam like package you should use org-roams.
+1. It's more robust (headline identifiers in org-mono is the headline title).
+2. It's more feature rich (in the node/backlinks space).
+3. It's more mature.
+
+But org-mono should be more customizable is it's less rigid about structure, which should allow the user to customize their org "structure" to their hearts content.
