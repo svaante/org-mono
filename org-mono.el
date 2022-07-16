@@ -9,7 +9,7 @@
 (require 'cl-macs)
 
 (defgroup org-mono nil
-  "TODO"
+  "Group for customization of `org-mono'"
   :group 'extensions)
 
 (defcustom org-mono-files '()
