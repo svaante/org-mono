@@ -28,7 +28,7 @@ Works as `org-capture-templates' but withouth key and description."
   :group 'org-mono)
 
 (defcustom org-mono-capture-templates
-  '(("t" "Todo" "** TODO %?"))
+  '(("t" "Todo" "%(org-mono-capture-parent-stars)* TODO %?"))
   "Capture templates that capture under specified region used by
 `org-mono-capture-under-headline'. Same format as
 `org-capture-templates' except for no target as that is handled by
