@@ -12,7 +12,9 @@
   '(org-mono-consult--source-headline
     org-mono-consult--source-todo
     org-mono-consult--source-todo-in-progress
-    org-mono-consult--source-top-level)
+    org-mono-consult--source-top-level
+    org-mono-consult--source-today
+    org-mono-consult--source-week)
   "Sources used by `org-mono-consult-completing-read'."
   :type '(repeat symbol))
 
@@ -103,8 +105,46 @@ See `org-mono--headline-components' for components structure."
     :items ,(lambda () (funcall org-mono-consult-special-entries-fn)))
   "Special candidate sourcw source for
 `org-mono-consult-completing-read'.")
+
+(defvar org-mono-consult--source-today
+  `(:name            "Today"
+    :narrow          ?d
+    :category        org-mono
+    :state           ,#'org-mono-consult--headline-state
+    :default         nil
+    :hidden          t
     :items
     ,(lambda ()
+       (let ((current-day (org-today)))
+         (org-mono--query
+          (lambda (cand)
+            (let ((timestamp (alist-get :timestamp cand)))
+              (when timestamp
+                (equal
+                 (time-to-days (org-2ft timestamp))
+                 current-day))))))))
+  "Today timestamp candidate source for
+`org-mono-consult-completing-read'.")
+
+(defvar org-mono-consult--source-week
+  `(:name            "Week"
+    :narrow          ?w
+    :category        org-mono
+    :state           ,#'org-mono-consult--headline-state
+    :default         nil
+    :hidden          t
+    :items
+    ,(lambda ()
+       (let ((current-week (org-days-to-iso-week (org-today))))
+         (org-mono--query
+          (lambda (cand)
+            (let ((timestamp (alist-get :timestamp cand)))
+              (when timestamp
+                (equal
+                 (org-days-to-iso-week
+                  (time-to-days (org-2ft timestamp)))
+                 current-week))))))))
+  "Current week candidate source for
 `org-mono-consult-completing-read'.")
 
 (defun org-mono-consult--position (headline &optional find-file)
