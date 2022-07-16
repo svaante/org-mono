@@ -33,7 +33,8 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     (setq org-mono-files '("~/org/notes.org"
                            "~/org/todo.org"
                            "~/org/books.org"))
-    ;; Optional if org-mono should index all org files opened
+
+    ;; Optional if org-mono should index all org buffers
     ;; (setq org-mono-all-org-files t)
     (setq org-mono-capture-dwim-template '(entry
                                            (file "~/org/notes.org")
@@ -45,8 +46,11 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
                                         "%(org-mono-capture-parent-stars)* %?")
                                        ("l" "Link" "%l %?")))
 
-    (setq org-mono-narrow-after-goto t)
-    (setq org-mono-candidate-with-path t)
+    ;; Optional if narrow after goto
+    ;; (setq org-mono-narrow-after-goto t)
+
+    ;; Optional if prefix headline candidate with path
+    ;; (setq org-mono-candidate-with-path t)
 
     ;; Optionally if embark is installed
     ;; (embark-define-keymap embark-org-mono-actions
