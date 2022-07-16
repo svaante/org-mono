@@ -13,6 +13,7 @@
     org-mono-consult--source-todo
     org-mono-consult--source-todo-in-progress
     org-mono-consult--source-top-level
+    org-mono-consult--source-top-level-no-todos
     org-mono-consult--source-today
     org-mono-consult--source-week)
   "Sources used by `org-mono-consult-completing-read'."
@@ -102,7 +103,7 @@ See `org-mono--headline-components' for components structure."
       :category org-mono
       :state    ,#'org-mono-consult--headline-state
       :default  nil
-      :hidden   nil
+      :hidden   t
       :items
       ,(lambda () (org-mono--query
                    (lambda (cand)
