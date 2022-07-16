@@ -197,8 +197,11 @@ If function return default candidate."
   "\\[\\[\\(file:\\(.+\\.org\\)::\\)?\\*\\(.+\\)\\]\\[.*\\]\\]")
 
 (defun org-mono--get-files ()
-  "Resolve file list specified by `org-mono-files'"
-  (mapcar 'expand-file-name org-mono-files))
+  "Resolve file list or function specified by `org-mono-files'"
+  (mapcar 'expand-file-name
+          (pcase org-mono-files
+            ((pred functionp) (funcall org-mono-files))
+            (_ org-mono-files))))
 
 (defun org-mono--file-link-to-marker (components &optional create buffer)
   "Create marker from COMPONENTS see `org-mono--headline-components' for
