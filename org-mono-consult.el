@@ -17,7 +17,8 @@
     org-mono-consult--source-today
     org-mono-consult--source-week)
   "Sources used by `org-mono-consult-completing-read'."
-  :type '(repeat symbol))
+  :type '(repeat symbol)
+  :group 'org-mono)
 
 (defun org-mono-consult-special-entries-default-fn ()
   (list
@@ -28,7 +29,8 @@
   "Function to generate special entires
 See `org-mono-consult-special-entries-default-fn' and
 `org-mono-consult--source-special'."
-  :type 'function)
+  :type 'function
+  :group 'org-mono)
 
 (defvar org-mono-consult--hash-map (make-hash-table)
   "Local variable used to generate candidates for
