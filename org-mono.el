@@ -589,12 +589,9 @@ For docs on the rest of the arguments see `completing-read'"
       (set-buffer (org-capture-target-buffer (buffer-file-name
                                               (marker-buffer marker))))
       (goto-char (marker-position marker))
-      (let ((beg (point)))
-        ;; Move to next of current match
-        (org-forward-heading-same-level 1 t)
-        ;; Move to end of buffer if this is the last headline in the file
-        (when (= beg (point))
-          (goto-char (point-max)))))))
+      (if-let ((next-headline-point (org-mono--next-headline-point)))
+          (goto-char next-headline-point)
+        (goto-char (point-max))))))
 
 (defun org-headline--dwim-capture (headline-str)
   "Captures a new headline under new `HEADLINE-STR` with template
