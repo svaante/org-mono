@@ -89,11 +89,13 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :group 'org-mono)
 
 (defcustom org-mono-annotation-format
-  `((:file org-column 10 file-name-nondirectory)
-    (:level org-property-value 2 ,(lambda (level) (make-string level ?*)))
-    (:timestamp org-date 16 identity)
-    (:todo org-todo 4 identity)
-    (:back-links org-level-4 50 ,(lambda (back-links)
+  `((:file org-column 10 10 file-name-nondirectory)
+    (:level org-property-value 2 2 ,(lambda (level) (make-string level ?*)))
+    (:timestamp org-date 16 16 identity)
+    (:todo org-todo 4 4 identity)
+    (:parents org-level-5 0 50 ,(lambda (parents)
+                                  (string-join parents "/")))
+    (:back-links org-level-4 0 50 ,(lambda (back-links)
                                     (string-join
                                      (mapcar (lambda (back-link)
                                                (alist-get :headline
@@ -502,16 +504,17 @@ Uses TABLE to calculate the max length for the candidates."
            "  "
            (string-join
             (mapcar (lambda (annotation-format)
-                      (pcase-let* ((`(,key ,face ,width ,fn)
+                      (pcase-let* ((`(,key ,face ,min-width ,max-width ,fn)
                                     annotation-format)
                                    (component (alist-get key
                                                          components))
                                    (str (funcall fn component)))
-                        (truncate-string-to-width (propertize (or str "")
-                                                              'face face)
-                                                  width
-                                                  0
-                                                  ?\s)))
+                        (if str
+                            (truncate-string-to-width
+                             (propertize (or str "")
+                                         'face face)
+                             max-width 0 ?\s)
+                          (make-string min-width ?\s))))
                     org-mono-annotation-format)
             "  "))
           " (new headline)")))))
