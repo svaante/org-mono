@@ -83,7 +83,7 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
                  (const :tag "No suffix" nil))
   :group 'org-mono)
 
-(defcustom org-mono-completion-candidate-max-length 40
+(defcustom org-mono-completion-candidate-max-length 60
   "Max candidate length. Increase this value if window width is a non-issue."
   :type 'integer
   :group 'org-mono)
