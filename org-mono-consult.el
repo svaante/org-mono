@@ -53,6 +53,7 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :state    ,#'org-mono-consult--headline-state
     :default  t
+    :shows-all t
     :items
     ,(lambda () (org-mono--query (lambda (_) t))))
   "Headline candidate source for `org-mono-consult-completing-read'.")
@@ -263,11 +264,27 @@ constructed.
 For docs on the rest of the arguments see `completing-read'"
   (setq org-mono-consult--hash-map
         (or hash-table (org-mono--completion-table)))
-  (let* ((sources (if hash-table
-                      (seq-filter (lambda (source)
-                                    (not (plist-get source :only-full-table)))
-                                  org-mono-consult-sources)
+  (let* (
+         ;; If we have recieved a hash-table remove :only-full-table
+         ;; sources
+         (sources (if hash-table
+                      (seq-filter
+                       (lambda (source)
+                         (not (plist-get source :only-full-table)))
+                       org-mono-consult-sources)
                     org-mono-consult-sources))
+         ;; If we have require-match and hash-table "un-hide"
+         ;; all `:shows-all' temporarily
+         (sources (if (and hash-table require-match)
+                      (mapcar (lambda (source)
+                                (if (plist-get (eval source) :shows-all)
+                                      (plist-put
+                                       (seq-copy (eval source))
+                                       :hidden
+                                       nil)
+                                  source))
+                              sources)
+                    sources))
          (match (consult--multi sources
                                 :require-match require-match
                                 :prompt prompt
