@@ -547,6 +547,14 @@ Note this only work if current file is indexed in cache."
                  ", ")))))))
 
 ;; Commands
+(defun org-mono-archive (headline)
+  "Org archive subtree for HEADLINE."
+  (interactive
+   (list
+    (funcall org-mono-completing-read-fn "Archive headline: ")))
+  (org-mono--with-headline headline
+    (org-archive-subtree)))
+
 (defun org-mono-time-stamp (headline)
   "Org time stamp HEADLINE under headline or update if time-stamp found."
   (interactive
