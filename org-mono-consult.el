@@ -202,8 +202,10 @@ FIND-FILE is the file open function, defaulting to `find-file'."
         (cond ((and (eq state 'preview)
                     headline)
                ;; FIX: Should handle when candidate is a non-match
-               (let* ((not-opened (null (find-buffer-visiting (alist-get :file headline))))
-                      (buffer (find-file-noselect (alist-get :file headline))))
+               (let* ((not-opened (null (find-buffer-visiting
+                                         (alist-get :file headline))))
+                      (buffer (find-file-noselect
+                               (alist-get :file headline))))
                  ;; Preview cand
                  (switch-to-buffer buffer)
                  (if not-opened
@@ -246,7 +248,9 @@ compleations. TABLE consist of the hash-table.
 See `org-mono--completion-table'"
   (let ((annotate-fn (org-mono--annotate table)))
     (lambda (candidate)
-      (funcall annotate-fn (apply #'concat (butlast (split-string candidate "") 2))))))
+      (funcall annotate-fn
+               (apply #'concat
+                      (butlast (split-string candidate "") 2))))))
 
 (defun org-mono-consult-completing-read (prompt
                                          &optional
