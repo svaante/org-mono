@@ -45,8 +45,8 @@ See `org-mono--headline-components' for components structure."
                org-mono-consult--hash-map)))
 
 (defvar org-mono-consult--source-headline
-  `(:name     "Headline"
-    :narrow   ?h
+  `(:name     "All headlines"
+    :narrow   ?a
     :category org-mono
     :state    ,#'org-mono-consult--headline-state
     :default  t
@@ -91,8 +91,9 @@ See `org-mono--headline-components' for components structure."
     :hidden   t
     :items
     ,(lambda () (org-mono--query
-                 (lambda (cand) (eq (alist-get :level cand) 1)))))
-    "Top level headline candidate source for
+                 (lambda (cand)
+                   (eq (alist-get :level cand) 1)))))
+  "Top level headline candidate source for
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-special
