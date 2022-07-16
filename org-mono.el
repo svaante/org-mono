@@ -547,6 +547,21 @@ Note this only work if current file is indexed in cache."
                  ", ")))))))
 
 ;; Commands
+(defun org-mono-time-stamp (headline)
+  "Org time stamp HEADLINE under headline or update if time-stamp found."
+  (interactive
+   (list
+    (funcall org-mono-completing-read-fn "Timestamp headline: ")))
+  (org-mono--with-headline headline
+    (let ((timestamp-marker
+           (org-mono--first-timestamp-mark headline)))
+      (if timestamp-marker
+          (goto-char (marker-position timestamp-marker))
+        (end-of-line)
+        (newline))
+      (org-time-stamp nil)
+      (org-indent-line))))
+
 (defun org-mono-capture-under-headline (headline)
   "Capture under HEADLINE."
   (interactive
