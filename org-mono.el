@@ -559,9 +559,20 @@ For docs on the rest of the arguments see `completing-read'"
 (defvar org-headline--headline-injected-headline nil
   "Used to save candiate match and inject into org capture template.")
 
+(defvar org-mono--injected-headline nil
+  "Used to save candidate match and inject into org capture templates.")
+
 (defun org-mono-dwim-headline ()
   "Returns the headline string for the last `org-mono-dwim' non-match."
   org-headline--headline-injected-headline)
+
+(defun org-mono-capture-parent-stars ()
+  (unless org-mono--injected-headline
+    (user-error
+     "Should only be used after `org-mono-capture-under-headline'"))
+  (make-string
+   (alist-get :level org-mono--injected-headline)
+   ?*))
 
 (defun org-mono-create-file+function (headline)
   "Creates an org-capture-file+function from HEADLINE see
@@ -663,6 +674,7 @@ Note this only work if current file is indexed in cache."
                 ,template
                 . ,properties)))
           org-mono-capture-templates)))
+    (setq org-mono--injected-headline headline)
     (call-interactively #'org-capture)))
 
 (defun org-mono-goto-headline-child (headline child)
