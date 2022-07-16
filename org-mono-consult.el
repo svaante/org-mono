@@ -96,6 +96,21 @@ See `org-mono--headline-components' for components structure."
   "Top level headline candidate source for
 `org-mono-consult-completing-read'.")
 
+(defvar org-mono-consult--source-top-level-no-todos
+    `(:name     "Top level no todos"
+      :narrow   ?L
+      :category org-mono
+      :state    ,#'org-mono-consult--headline-state
+      :default  nil
+      :hidden   nil
+      :items
+      ,(lambda () (org-mono--query
+                   (lambda (cand)
+                     (and (eq (alist-get :level cand) 1)
+                          (null (alist-get :todo cand)))))))
+    "Top level headline candidate source with no todos for
+`org-mono-consult-completing-read'.")
+
 (defvar org-mono-consult--source-special
   `(:name            "Special"
     :narrow          ?s
