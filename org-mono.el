@@ -6,6 +6,7 @@
 (require 'org-capture)
 (require 'org-element)
 (require 'timer)
+(require 'cl-macs)
 
 (defgroup org-mono nil
   "TODO"
@@ -312,8 +313,10 @@ not found. Use BUFFER marker should be created in BUFFER."
         (eq (alist-get :level hc) n))
        ('all t)))
    (with-current-buffer buffer
-     (org-map-entries
-      #'org-mono--headline-components nil 'file))))
+     ;; HACK to remove "Non-existent agenda file" when file does not exist.
+     (cl-flet ((org-agenda-prepare-buffers (&rest _) nil))
+       (org-map-entries
+        #'org-mono--headline-components nil 'file)))))
 
 (defun org-mono--list-headlines (format)
   "Get cache contents. Return as either list or hash-map where key is filename.
