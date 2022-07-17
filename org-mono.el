@@ -152,10 +152,15 @@ If function return default candidate."
            org-mono-cache-delay
            nil
            (lambda (buffer)
-             (when (or (and org-mono-all-org-files (with-current-buffer buffer
-                                                              (bound-and-true-p org-mode)))
-                       (member (buffer-file-name buffer) (org-mono--get-files)))
-               (org-mono--cache-file (buffer-file-name buffer) t))
+             ;; HACK: nothing unexpected should
+             (condition-case err
+                 (when (or (and org-mono-all-org-files (with-current-buffer buffer
+                                                         (bound-and-true-p org-mode)))
+                           (member (buffer-file-name buffer) (org-mono--get-files)))
+                   (org-mono--cache-file (buffer-file-name buffer) t))
+               (error (princ
+                       (format "Unexpected error during org-mono caching: %s" err))
+                      nil))
              (setq org-mono--cache-timer nil))
            (current-buffer)))))
 
