@@ -541,7 +541,10 @@ Uses TABLE to calculate the max length for the candidates."
                             (truncate-string-to-width
                              (propertize (or str "")
                                          'face face)
-                             max-width 0 ?\s)
+                             (min (max (length str)
+                                       min-width)
+                                  max-width)
+                             0 ?\s)
                           (make-string min-width ?\s))))
                     org-mono-annotation-format)
             "  "))
