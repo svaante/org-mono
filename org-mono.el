@@ -117,6 +117,13 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :type '(alist :value-type (group face integer function))
   :group 'org-mono)
 
+(defcustom org-mono-annotations-enabled
+  '(:file :level :timestamp :todo :tags :parents :back-links)
+  "Which headline components annotated with `completing-read'.
+See `org-mono-annotation-format' for available annotations."
+  :type 'list
+  :group 'org-mono)
+
 (defcustom org-mono-dwim-default-candidate-fn nil
   "Default candidate for `org-mono-dwim'
 If function return default candidate."
@@ -531,8 +538,10 @@ Uses TABLE to calculate the max length for the candidates."
                         ?\s)
            "  "
            (string-join
-            (mapcar (lambda (annotation-format)
-                      (pcase-let* ((`(,key ,face ,min-width ,max-width ,fn)
+            (mapcar (lambda (key)
+                      (pcase-let* ((annotation-format
+                                    (alist-get key org-mono-annotation-format))
+                                   (`(,face ,min-width ,max-width ,fn)
                                     annotation-format)
                                    (component (alist-get key
                                                          components))
@@ -546,7 +555,7 @@ Uses TABLE to calculate the max length for the candidates."
                                   max-width)
                              0 ?\s)
                           (make-string min-width ?\s))))
-                    org-mono-annotation-format)
+                    org-mono-annotations-enabled)
             "  "))
           " (new headline)")))))
 
