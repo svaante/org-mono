@@ -99,6 +99,11 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
     (:level org-property-value 2 2 ,(lambda (level) (make-string level ?*)))
     (:timestamp org-date 16 16 identity)
     (:todo org-todo 4 4 identity)
+    (:prio org-priority 1 1 (lambda (prio)
+                              (when prio
+                                (char-to-string prio))))
+
+    (:tags org-tag 0 15 identity)
     (:parents org-level-5 0 50 ,(lambda (parents)
                                   (string-join parents "/")))
     (:back-links org-level-4 0 50 ,(lambda (back-links)
