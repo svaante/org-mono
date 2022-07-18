@@ -97,8 +97,8 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :group 'org-mono)
 
 (defcustom org-mono-annotation-format
-  `((:file org-column 10 10 file-name-nondirectory)
-    (:level org-property-value 2 2 ,(lambda (level) (make-string level ?*)))
+  `((:file org-column 13 13 file-name-nondirectory)
+    (:level org-property-value 3 3 ,(lambda (level) (make-string level ?*)))
     (:timestamp org-date 16 16 identity)
     (:todo org-todo 4 4 identity)
     (:prio org-priority 1 1 (lambda (prio)
