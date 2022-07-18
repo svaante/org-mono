@@ -224,6 +224,12 @@ If function return default candidate."
 (defconst org-mono--link-re
   "\\[\\[\\(file:\\(.+\\.org\\)::\\)?\\*\\(.+\\)\\]\\[.*\\]\\]")
 
+(defun org-mono--org-heading-components ()
+  "Wrapper around `org-heading-components'
+but with `org-odd-levels-only' set to nil."
+  (let ((org-odd-levels-only))
+    (org-heading-components)))
+
 (defun org-mono--get-files ()
   "Resolve file list or function specified by `org-mono-files'"
   (mapcar 'expand-file-name
@@ -252,7 +258,7 @@ not found. Use BUFFER marker should be created in BUFFER."
   "Creates base for headline components at point."
   (ignore-error user-error
     (pcase-let ((`(,level ,_ ,todo ,prio ,headline ,tags)
-                 (org-heading-components))
+                 (org-mono--org-heading-components))
                 (timestamp
                  (org-mono--get-timestamp-at-headline))
                 (parents (org-mono--get-parents-at-point)))
@@ -298,11 +304,11 @@ not found. Use BUFFER marker should be created in BUFFER."
    (save-mark-and-excursion
      (when starting-point
        (goto-char starting-point))
-     (pcase-let ((`(,child-level) (org-heading-components)))
+     (pcase-let ((`(,child-level) (org-mono--org-heading-components)))
        (when-let ((parent-point (org-mono--prev-headline-point)))
          (goto-char parent-point)
          (pcase-let ((`(,parent-level ,_ ,_ ,_ ,headline)
-                      (org-heading-components)))
+                      (org-mono--org-heading-components)))
            (cond
             ((= child-level 1)
              nil)
@@ -667,7 +673,7 @@ For docs on the rest of the arguments see `completing-read'"
   "Gets all backlinks under heading at point."
   (when (and (derived-mode-p 'org-mode)
              (not (org-before-first-heading-p)))
-    (let ((headline (nth 4 (org-heading-components))))
+    (let ((headline (nth 4 (org-mono--org-heading-components))))
       (alist-get
        :back-links 
        (seq-find (lambda (component)
