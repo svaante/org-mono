@@ -401,14 +401,15 @@ should only used by `org-mono--completion-table-add' itself."
       (puthash key components table))))
 
 
-(defun org-mono--completion-table (&optional headlines)
+(defun org-mono--completion-table (&optional headlines capf)
   "Construct a completion candidate hash-map of string -> components.
 HEADLINES specifies a subset of the cache as a list of components."
   (let ((headlines (or headlines (org-mono--list-headlines 'list)))
         (table (make-hash-table :test 'equal)))
     (seq-do (lambda (components)
               (org-mono--completion-table-add components
-                                                       table))
+                                              table
+                                              capf))
             headlines)
     table))
 
@@ -584,10 +585,10 @@ buffer. This is a `completion-at-point' function."
   (when (and (thing-at-point 'word)
              (not (org-at-heading-p))
              (not (save-match-data (org-in-regexp org-link-any-re))))
-    (let ((table (org-mono--completion-table))
+    (let ((table (org-mono--completion-table nil t))
           (bounds (bounds-of-thing-at-point 'word)))
       (list (car bounds) (cdr bounds)
-            (org-mono--completion-table)
+            table
             :exit-function
             (lambda (str _status)
               (let ((components (gethash str table)))
