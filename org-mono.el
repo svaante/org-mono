@@ -449,7 +449,6 @@ If KEYS are specified KEYS are alisted and then applied to FN."
          (save-restriction
            (widen)
            (goto-char position)
-           (org-show-subtree)
            (prog1 ,@body
              (org-mono--schedule-cache-timer)
              (when not-opened
@@ -473,20 +472,17 @@ If KEYS are specified KEYS are alisted and then applied to FN."
 
 (defun org-mono--get-timestamp-at-headline ()
   "Get org timestamp string under headline at point."
-  (save-excursion
-    (save-restriction
-      (save-match-data
-        (widen)
-        (org-show-subtree)
-        (let* ((end (or (org-mono--next-headline-point) (point-max)))
-               (timestamp-point (re-search-forward
-                                 org-element--timestamp-regexp
-                                 end
-                                 t)))
-          (when timestamp-point
-            (buffer-substring-no-properties
-             (match-beginning 0)
-             (match-end 0))))))))
+  (org-with-wide-buffer
+   (save-match-data
+     (let* ((end (or (org-mono--next-headline-point) (point-max)))
+            (timestamp-point (re-search-forward
+                              org-element--timestamp-regexp
+                              end
+                              t)))
+       (when timestamp-point
+         (buffer-substring-no-properties
+          (match-beginning 0)
+          (match-end 0)))))))
 
 ;; FIX: this is a bit messy
 (defun org-mono--headlines-with-children ()
