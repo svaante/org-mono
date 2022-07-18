@@ -47,7 +47,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
                                        ("l" "Link" "%l %?")))
 
     ;; Optional if narrow after goto
-    ;; (setq org-mono-narrow-after-goto t)
+    ;; (setq org-mono-narrow-after-goto 'parent)
 
     ;; Optional if prefix headline candidate with path
     ;; (setq org-mono-candidate-with-path t)
