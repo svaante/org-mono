@@ -237,16 +237,12 @@ but with `org-odd-levels-only' set to nil."
             ((pred functionp) (funcall org-mono-files))
             (_ org-mono-files))))
 
-(defun org-mono--file-link-to-marker (components &optional create buffer)
+(defun org-mono--file-link-to-marker (components)
   "Create marker from COMPONENTS see `org-mono--headline-components' for
-COMPONENTS data structure. CREATE specifies if the headline should be created if
-not found. Use BUFFER marker should be created in BUFFER."
-  ;; TODO: should probobly handle non existent files
-  (with-current-buffer (or buffer (find-file-noselect (alist-get :file components)))
-    (org-with-wide-buffer
-     (let ((org-link-search-must-match-exact-headline (or (not create) 'query-to-create)))
-       (ignore-errors (org-link-search (alist-get :headline components))))
-     (point-marker))))
+COMPONENTS data structure."
+  (with-current-buffer (find-file-noselect (alist-get :file components))
+    (org-find-exact-headline-in-buffer
+     (alist-get :headline components))))
 
 (defun org-mono--headline-re ()
   "Construct regexp for headline. Uses `org-mono-headline-level'."
