@@ -629,11 +629,7 @@ For docs on the rest of the arguments see `completing-read'"
   "Creates an org-capture-file+function from HEADLINE see
 `org-capture-templates'."
   (lambda ()
-    (let* ((headline (if (stringp headline) ;; FIX: this should be nicer
-                         `((:headline . ,headline)
-                           (:file .     ,(car (org-mono--get-files))))
-                       headline))
-           (marker (org-mono--file-link-to-marker headline t)))
+    (let ((marker (org-mono--file-link-to-marker headline)))
       (set-buffer (org-capture-target-buffer (buffer-file-name
                                               (marker-buffer marker))))
       (goto-char (marker-position marker))
