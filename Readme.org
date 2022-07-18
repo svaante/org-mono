@@ -106,13 +106,15 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
 ** Similarities with other packages
 *** Org-agenda
 Org-mono can be used as a poor mans org-agenda with a nice modern interface (consult).
-org-mono-consult implements it's completing-read function with ~consult--multi~ which allows the user to create agenda feeds.
+org-mono-consult is implemented with ~consult--multi~ which allows the user to create simple agenda feeds.
 
 Currently implemented sources:
 + ?i "Todos in-progress"
 + ?t "All todos"
 + ?d "All headlines timestamped today"
 + ?w "All headlines timestamped this week"
+
+Then if ~embark~ is used a todo cycling or timestamp change is just a key mapping away.
 
 This is of course just a very small subset of what ~org-agenda~ can do but it's nice to have some of it under the same completion interface.
 *** Org-roam
