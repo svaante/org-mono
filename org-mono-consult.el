@@ -51,7 +51,6 @@ See `org-mono--headline-components' for components structure."
   `(:name     "All headlines"
     :narrow   ?h
     :category org-mono
-    :state    ,#'org-mono-consult--headline-state
     :default  t
     :shows-all t
     :items
@@ -62,7 +61,6 @@ See `org-mono--headline-components' for components structure."
   `(:name     "Todos"
     :narrow   ?t
     :category org-mono
-    :state    ,#'org-mono-consult--headline-state
     :default  nil
     :hidden   t
     :items
@@ -75,7 +73,6 @@ See `org-mono--headline-components' for components structure."
   `(:name     "Todos in-progress"
     :narrow   ?i
     :category org-mono
-    :state    ,#'org-mono-consult--headline-state
     :default  nil
     :hidden   t
     :items
@@ -90,7 +87,6 @@ See `org-mono--headline-components' for components structure."
   `(:name     "Top level"
     :narrow   ?l
     :category org-mono
-    :state    ,#'org-mono-consult--headline-state
     :default  nil
     :hidden   t
     :items
@@ -104,7 +100,6 @@ See `org-mono--headline-components' for components structure."
     `(:name     "Top level no todos"
       :narrow   ?L
       :category org-mono
-      :state    ,#'org-mono-consult--headline-state
       :default  nil
       :hidden   t
       :items
@@ -119,7 +114,6 @@ See `org-mono--headline-components' for components structure."
   `(:name            "Special"
     :narrow          ?s
     :category        org-mono
-    :state           ,#'org-mono-consult--headline-state
     :default         t
     :only-full-table t
     :items ,(lambda () (funcall org-mono-consult-special-entries-fn)))
@@ -130,7 +124,6 @@ See `org-mono--headline-components' for components structure."
   `(:name            "Today"
     :narrow          ?d
     :category        org-mono
-    :state           ,#'org-mono-consult--headline-state
     :default         nil
     :hidden          t
     :items
@@ -150,7 +143,6 @@ See `org-mono--headline-components' for components structure."
   `(:name            "Week"
     :narrow          ?w
     :category        org-mono
-    :state           ,#'org-mono-consult--headline-state
     :default         nil
     :hidden          t
     :items
@@ -177,68 +169,53 @@ FIND-FILE is the file open function, defaulting to `find-file'."
      nil
      (funcall (or find-file #'find-file) (alist-get :file headline)))))
 
-(defun org-mono-consult--after-jump ()
-  "Hook to show headline subtree and narrow to subtree, if
-`org-mono-narrow-after-goto' is non-nil."
-  (org-show-subtree)
-  (when org-mono-narrow-after-goto
-    (org-narrow-to-subtree)))
-
-(defun org-mono-consult--restore-buffer (buffer-reset-info)
-  "Restor buffer after preview."
-  (when buffer-reset-info
-    (with-current-buffer (alist-get :buffer buffer-reset-info)
-      (widen)
-      (when-let ((region (alist-get :region buffer-reset-info)))
-        (apply #'narrow-to-region region))
-      (goto-char (alist-get :position buffer-reset-info)))))
+(defun org-mono--store-overlay-repr ()
+  (let* ((overlays-list (overlay-lists))
+         (overlays (append (car overlays-list)
+                           (cdr overlays-list))))
+    (mapcar (lambda (overlay)
+              `(,(overlay-start overlay)
+                ,(overlay-end overlay)
+                . ,(overlay-properties overlay)))
+            overlays)))
 
 (defun org-mono-consult--headline-state ()
   "Headline state function."
   (let ((reset-buffer (current-buffer))
         (buffers-to-kill)
-        (buffers-reset-info))
+        (preview-buffers (make-hash-table :test 'equal)))
     (lambda (state cand)
-      (let ((headline (gethash cand org-mono-consult--hash-map)))
+      (let ((headline (gethash (car cand) org-mono-consult--hash-map)))
         (cond ((and (eq state 'preview)
                     headline)
-               ;; FIX: Should handle when candidate is a non-match
-               (let* ((not-opened (null (find-buffer-visiting
-                                         (alist-get :file headline))))
+               (let* ((opened (find-buffer-visiting
+                                         (alist-get :file headline)))
                       (buffer (find-file-noselect
                                (alist-get :file headline))))
                  ;; Preview cand
+                 (when opened
+                   (let* ((buffer-fname (buffer-file-name buffer)))
+                     (setq buffer
+                           (or (gethash buffer-fname preview-buffers)
+                               (puthash buffer-fname
+                                        (make-indirect-buffer
+                                         buffer
+                                         (generate-new-buffer-name
+                                          (format "Preview:%s"
+                                                  (buffer-name buffer)))
+                                         t)
+                                        preview-buffers)))))
+                 (push buffer buffers-to-kill)
                  (switch-to-buffer buffer)
-                 (if not-opened
-                     (push buffer buffers-to-kill)
-                   (unless (or (seq-some (lambda (buffer-reset-info)
-                                           (eq buffer
-                                               (alist-get :buffer buffer-reset-info)))
-                                         buffers-reset-info)
-                               (member buffer buffers-to-kill))
-                     (push `((:buffer . ,buffer)
-                             (:region . ,(when (org-buffer-narrowed-p)
-                                           (list (point-min) (point-max))))
-                             (:position . ,(point)))
-                           buffers-reset-info)))
                  (widen)
                  (goto-char (marker-position
                              (org-mono--file-link-to-marker headline)))
-                 (when org-mono-narrow-after-goto
-                   (org-narrow-to-subtree))
-                 (org-show-subtree)))
+                 (org-mono--after-jump)))
               ((and (eq state 'preview)
-                    (null cand))
-               (progn 
-                 (switch-to-buffer reset-buffer)
-                 (org-mono-consult--restore-buffer
-                  (seq-find (lambda (buffer-reset-info)
-                              (eq reset-buffer
-                                  (alist-get :buffer buffer-reset-info)))
-                            buffers-reset-info))))
+                    (null headline))
+                 (switch-to-buffer reset-buffer))
               ((eq state 'exit)
                (seq-do #'kill-buffer buffers-to-kill)
-               (seq-do #'org-mono-consult--restore-buffer buffers-reset-info)
                (switch-to-buffer reset-buffer)))))))
 
 ;; FIX: I am to lazy to figure out why this is happening
@@ -264,8 +241,7 @@ constructed.
 For docs on the rest of the arguments see `completing-read'"
   (setq org-mono-consult--hash-map
         (or hash-table (org-mono--completion-table)))
-  (let* (
-         ;; If we have recieved a hash-table remove :only-full-table
+  (let* (;; If we have recieved a hash-table remove :only-full-table
          ;; sources
          (sources (if hash-table
                       (seq-filter
@@ -290,6 +266,7 @@ For docs on the rest of the arguments see `completing-read'"
                                 :prompt prompt
                                 :annotate (org-mono-consult--annotate
                                            org-mono-consult--hash-map)
+                                :state (org-mono-consult--headline-state)
                                 :sort nil)))
     (gethash (car match) org-mono-consult--hash-map (car match))))
 
