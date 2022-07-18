@@ -39,7 +39,7 @@ Works as `org-capture-templates' but withouth key and description."
 
 (defcustom org-mono-headline-level 'all
   "Specifies headline level for indexing."
-  :type '(choice (const :tag "All levels" all)
+  :type '(choice (const :tag "All levels" 'all)
                  (integer :tag "Level of headline, [1, n]"))
   :group 'org-mono)
 
