@@ -579,8 +579,8 @@ Uses TABLE to calculate the max length for the candidates."
 
 ;; Shamelessly stolen from org-roam-complete-everywhere
 (defun org-mono-link-complete ()
-  "Complete symbol at point as a link completion to an org headline in current buffer.
-  This is a `completion-at-point' function."
+  "Complete symbol at point as a link completion to an org headline in current
+buffer. This is a `completion-at-point' function."
   (when (and (thing-at-point 'word)
              (not (org-at-heading-p))
              (not (save-match-data (org-in-regexp org-link-any-re))))
