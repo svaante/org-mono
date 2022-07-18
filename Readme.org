@@ -5,7 +5,7 @@ Org-mono provides a monolithic headline completion interface to your org files.
 
 Org-mono is mainly a in memory cache for all your Org headlines, but it has a some other features slapped on to it as well.
 
-+ completion with or without [[https://github.com/minad/consult][consult]] (but I highly recommend consult)
++ completion with or without [[https://github.com/minad/consult][consult]]
 + headline org headline link ~completion-at-point~
 + backlinks
 + capturing under headline
