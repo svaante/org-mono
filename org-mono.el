@@ -60,8 +60,10 @@ indexing of headlines in current buffer."
   :group 'org-mono)
 
 (defcustom org-mono-narrow-after-goto nil
-  "To narrow or not to narrow after jump to a headline."
+  "To narrow or not to narrow after jump to a headline.
+See `org-mono--narrow' implementation for details."
   :type '(choice (const :tag "Narrow" t)
+                 (const :tag "Narrow at parent" 'parent)
                  (const :tag "Do not narrow" nil))
   :group 'org-mono)
 
@@ -524,6 +526,18 @@ If KEYS are specified KEYS are alisted and then applied to FN."
                       (< level (alist-get :level comp)))
                     candidates)))
 
+(defun org-mono--after-jump ()
+  (pcase org-mono-narrow-after-goto
+    ('parent
+     (let ((orig-point (point)))
+       (ignore-errors (outline-up-heading 1))
+       (org-show-subtree)
+       (org-narrow-to-subtree)
+       (goto-char orig-point)))
+    ('t
+     (org-narrow-to-subtree)))
+  (org-show-subtree))
+
 ;; Completions
 (defun org-mono--annotate (table)
   "Creates annotation function for `org-mono-completing-read'.
@@ -783,9 +797,7 @@ Note this only work if current file is indexed in cache."
     (switch-to-buffer (marker-buffer marker))
     (widen)
     (goto-char (marker-position marker))
-    (org-show-subtree)
-    (when org-mono-narrow-after-goto
-      (org-narrow-to-subtree))))
+    (org-mono--after-jump)))
 
 (defun org-mono-goto-other-window (headline)
   "Goto HEADLINE in other window."
@@ -796,9 +808,7 @@ Note this only work if current file is indexed in cache."
     (switch-to-buffer-other-window (marker-buffer marker))
     (widen)
     (goto-char (marker-position marker))
-    (org-show-subtree)
-    (when org-mono-narrow-after-goto
-      (org-narrow-to-subtree))))
+    (org-mono--after-jump)))
 
 (defun org-mono-todo (headline)
   "Cycle todo for HEADLINE."
