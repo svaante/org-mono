@@ -295,7 +295,8 @@ COMPONENTS data structure."
              t)
         (match-beginning 0)))))
 
-(defun org-mono--get-parents-at-point (&optional starting-point )
+(defun org-mono--get-parents-at-point (&optional starting-point)
+  "Get parents at point if STARTING-POINT non-nil start at STARTING-POINT"
   (org-with-wide-buffer
    (save-mark-and-excursion
      (when starting-point
@@ -314,12 +315,47 @@ COMPONENTS data structure."
             (t
              (org-mono--get-parents-at-point parent-point)))))))))
 
+(defun org-mono--update-file-links (old-file-link new-file-link)
+  "Update org links matching OLD-FILE-LINK with NEW-FILE-LINK.
+This function does not update `org-mono--cache' only org files."
+  (let* ((affected-components (seq-filter
+                               (lambda (comp)
+                                 (member
+                                  old-file-link
+                                  (alist-get :file-links comp)))
+                               (org-mono--list-headlines 'list)))
+         (affected-files (delete-dups
+                          (mapcar (lambda (comp)
+                                    (alist-get :file comp))
+                                  affected-components)))
+         (link-file (alist-get :file old-file-link))
+         (link-headline (alist-get :headline old-file-link)))
+    (seq-do (lambda (file)
+              (org-mono--with-file file
+               (save-match-data
+                 (while (re-search-forward org-mono--link-re
+                                           nil
+                                           t)
+                   (let* ((match-filename (when (match-string 2)
+                                            (substring-no-properties
+                                             (match-string 2))))
+                          (match-headline (when (match-string 3)
+                                            (substring-no-properties
+                                             (match-string 3)))))
+                     (when (and (equal match-filename link-file)
+                                (equal match-headline link-headline))
+                       (delete-region (match-beginning 0) (match-end 0))
+                       (goto-char (match-beginning 0))
+                       (insert (org-mono--headline-to-link new-file-link))))))))
+            affected-files)))
+
 (defun org-mono--heading-org-links ()
   "Return current headlines org links as a list of alists containing :file and
 :headline."
   (let ((bound (org-mono--next-headline-point)))
     (save-match-data
       (save-mark-and-excursion
+        (org-back-to-heading t)
         (let (links)
           (while (re-search-forward org-mono--link-re
                                     bound
@@ -436,6 +472,26 @@ If KEYS are specified KEYS are alisted and then applied to FN."
                                 (alist-get :headline comp))
                           back-links))
                 (org-mono--list-headlines 'list))))
+
+(defmacro org-mono--with-file (file-name &rest body)
+  "Macro for executing BODY in FILE-NAME buffer.
+Cleans up buffer if not all ready existing in buffer list."
+  (declare (indent 1) (debug t))
+  `(let* ((not-opened (null (find-buffer-visiting ,file-name)))
+          (buffer (find-file-noselect ,file-name)))
+     (with-current-buffer buffer
+       (save-excursion
+         (save-restriction
+           (widen)
+           (goto-char (point-min))
+           (prog1 ,@body
+             (when not-opened
+               (when (and org-mono-auto-save
+
+                          (buffer-modified-p))
+                 (save-buffer))
+               (kill-buffer buffer))))))))
+
 
 ;; FIX: this should not always run hooks
 (defmacro org-mono--with-headline (headline &rest body)
@@ -577,6 +633,12 @@ Uses TABLE to calculate the max length for the candidates."
             "  "))
           " (new headline)")))))
 
+(defun org-mono--headline-to-link (components)
+  "Convert COMPONENTS to org file and headline str link."
+  (format "[[file:%s::*%s][%s]]"
+          (alist-get :file components)
+          (alist-get :headline components)
+          (alist-get :headline components)))
 
 ;; Shamelessly stolen from org-roam-complete-everywhere
 (defun org-mono-link-complete ()
@@ -593,10 +655,7 @@ buffer. This is a `completion-at-point' function."
             (lambda (str _status)
               (let ((components (gethash str table)))
                 (delete-char (- (length str)))
-                (insert (format "[[file:%s::*%s][%s]]"
-                                (alist-get :file components)
-                                (alist-get :headline components)
-                                (alist-get :headline components)))))
+                (insert (org-mono--headline-to-link components))))
             ;; Proceed with the next completion function if the returned titles
             ;; do not match. This allows the default Org capfs or custom capfs
             ;; of lower priority to run.
@@ -699,6 +758,19 @@ Note this only work if current file is indexed in cache."
     (funcall org-mono-completing-read-fn "Archive headline: ")))
   (org-mono--with-headline headline
     (org-archive-subtree)))
+
+(defun org-mono-rename (headline)
+  "Rename HEADLINE."
+  (interactive
+   (list
+    (funcall org-mono-completing-read-fn "Rename headline: ")))
+  (org-mono--with-headline headline
+    (let* ((old-name (alist-get :headline headline))
+           (new-name (read-string "Rename: " old-name))
+           (new-file-link `((:headline . ,new-name)
+                            (:file . ,(alist-get :file headline)))))
+      (org-edit-headline new-name)
+      (org-mono--update-file-links headline new-file-link))))
 
 (defun org-mono-time-stamp (headline)
   "Org time stamp HEADLINE under headline or update if time-stamp found."
