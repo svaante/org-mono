@@ -404,36 +404,36 @@ This is specified with FORMAT as 'list or 'hash."
   "Add COMPONENTS, see `org-mono--headline-components' into hash-table TABLE.
 The key for COMPONENTS is different depending in if CAPF is t or TRY-NBR which
 should only used by `org-mono--completion-table-add' itself."
-  (let* ((headline (alist-get :headline components))
-         ;; Add file prefix if `capf' and `org-mono-completion-at-point-suffix'
-         ;; is file
-         (base-key (if (and capf
-                            (eq 'file org-mono-completion-at-point-suffix))
-                       (format "%s:%s"
-                               headline
-                               (file-name-nondirectory
-                                (alist-get :file components)))
-                     headline))
-         ;; Add path prefix is not in `capf' and
-         ;; `org-mono-candidate-with-path'
-         (base-key (if (and (not capf)
-                            org-mono-candidate-with-path)
-                       (string-join
-                        (reverse
-                         (cons base-key (alist-get :parents components)))
-                        "/")
-                       base-key))
-         (key (concat 
-               (truncate-string-to-width base-key
-                                         org-mono-completion-candidate-max-length
-                                         0 nil "...")
-               (when try-nbr
-                 (format "<%d>" try-nbr)))))
+  (when-let* ((headline (alist-get :headline components))
+              ;; Add file prefix if `capf' and `org-mono-completion-at-point-suffix'
+              ;; is file
+              (base-key (if (and capf
+                                 (eq 'file org-mono-completion-at-point-suffix))
+                            (format "%s:%s"
+                                    headline
+                                    (file-name-nondirectory
+                                     (alist-get :file components)))
+                          headline))
+              ;; Add path prefix is not in `capf' and
+              ;; `org-mono-candidate-with-path'
+              (base-key (if (and (not capf)
+                                 org-mono-candidate-with-path)
+                            (string-join
+                             (reverse
+                              (cons base-key (alist-get :parents components)))
+                             "/")
+                          base-key))
+              (key (concat
+                    (truncate-string-to-width base-key
+                                              org-mono-completion-candidate-max-length
+                                              0 nil "...")
+                    (when try-nbr
+                      (format "<%d>" try-nbr)))))
     (if (gethash key table nil)
         (org-mono--completion-table-add components
-                                                 table
-                                                 capf
-                                                 (1+ (or try-nbr 0)))
+                                        table
+                                        capf
+                                        (1+ (or try-nbr 0)))
       (puthash key components table))))
 
 
