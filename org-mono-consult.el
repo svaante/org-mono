@@ -230,6 +230,8 @@ See `org-mono--completion-table'"
                (apply #'concat
                       (butlast (split-string candidate "") 2))))))
 
+(defvar org-mono-consult--hist nil)
+
 (defun org-mono-consult-completing-read (prompt
                                          &optional
                                          hash-table
@@ -267,7 +269,8 @@ For docs on the rest of the arguments see `completing-read'"
                                 :annotate (org-mono-consult--annotate
                                            org-mono-consult--hash-map)
                                 :state (org-mono-consult--headline-state)
-                                :sort nil)))
+                                :history 'org-mono-consult--hist
+                                )))
     (gethash (car match) org-mono-consult--hash-map (car match))))
 
 (provide 'org-mono-consult)
