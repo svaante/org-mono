@@ -709,7 +709,7 @@ For docs on the rest of the arguments see `completing-read'"
           (goto-char next-headline-point)
         (goto-char (point-max))))))
 
-(defun org-headline--dwim-capture (headline-str)
+(defun org-mono--dwim-capture (headline-str)
   "Captures a new headline under new `HEADLINE-STR` with template
 `org-mono-capture-dwim-template'."
   (unless org-mono-capture-dwim-template
@@ -896,7 +896,7 @@ with `nameorg-mono-capture-default'."
    (list
     (funcall org-mono-completing-read-fn "DWIM headline: ")))
   (cond ((listp headline) (org-mono-goto headline))
-        ((stringp headline) (org-headline--dwim-capture headline))))'
+        ((stringp headline) (org-mono--dwim-capture headline))))'
 
 ;; Mode
 (defvar org-mono-mode nil)
