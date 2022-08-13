@@ -759,6 +759,47 @@ Note this only work if current file is indexed in cache."
   (org-mono--with-headline headline
     (org-archive-subtree)))
 
+(defun org-mono-refile (headline)
+  "Analog to `org-refile' with RFLOC set to nil."
+  (interactive
+   (list
+    (setq match
+          (funcall org-mono-completing-read-fn
+                   "Refile headline: "
+                   nil
+                   t))))
+  (when-let* ((marker (org-mono--file-link-to-marker headline))
+              (rfloc (list
+                      (alist-get :headline headline)
+                      (alist-get :file headline)
+                      ""
+                      (marker-position marker))))
+    (org-refile nil nil rfloc)))
+
+(defun org-mono-refile-from (headline headline-target)
+  "Refile HEADLINE under HEADLINE-TARGET."
+  (interactive
+   (list
+    (setq match
+          (funcall org-mono-completing-read-fn
+                   "Refile headline: "
+                   nil
+                   t))
+    (funcall org-mono-completing-read-fn
+             (format "Refile *%s* to: "
+                     (alist-get :headline match))
+             nil
+             t)))
+  (org-mono--with-headline headline
+    (org-mono-refile headline-target))
+  (org-mono--update-file-links
+   headline
+   `((:headline . ,(alist-get :headline headline))
+     (:file . ,(alist-get :file headline-target))))
+  ;; HACK: to update cache with new headline
+  (org-mono--with-headline headline-target
+    nil))
+
 (defun org-mono-rename (headline)
   "Rename HEADLINE."
   (interactive
