@@ -25,6 +25,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
            ("M-o k" . org-mono-delete-headline)
            ("M-o c" . org-mono-capture-under-headline)
            ("M-o r" . org-mono-rename)
+           ("M-o w" . org-mono-refile-from)
            ("M-o b" . org-mono-goto-back-links)
            ("M-o d" . org-mono-time-stamp)
            ("M-o C" . org-mono-goto-headline-child)
