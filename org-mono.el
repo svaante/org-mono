@@ -145,26 +145,46 @@ If function return default candidate."
 (defvar org-mono--cache-timer
   nil)
 
+(defvar org-mono--cache-queue
+  nil)
+
 ;; Cache
+(defun org-mono--execute-cache-queue ()
+  "Function for `org-mono--cache-timer' execution."
+  ;; HACK: nothing unexpected should happen
+  (condition-case err
+      (progn
+        (seq-do (lambda (file)
+                  (org-mono--cache-file file t))
+                org-mono--cache-queue)
+        ;; Reset cache queue
+        (setq org-mono--cache-queue nil))
+    (error (princ
+            (format "Unexpected error during org-mono caching: %s" err))
+           nil))
+  (setq org-mono--cache-timer nil))
+
 (defun org-mono--schedule-cache-timer (&rest _)
   "Indexing headlines on a timer."
+  ;; Push current buffer to cache queue
+  (when (boundp 'org-mono--cache-queue)
+    (let* ((buffer (current-buffer))
+           (file (buffer-file-name buffer)))
+      (when (and
+             ;; Do not add file if its all ready in the queue
+             (not (member file org-mono--cache-queue))
+             ;; File should be allowed inside the queue
+             (or (and org-mono-all-org-files
+                      (with-current-buffer buffer
+                        (bound-and-true-p org-mode)))
+                 (member file (org-mono--get-files))))
+        (push file org-mono--cache-queue))))
   (unless (bound-and-true-p org-mono--cache-timer)
     (setq org-mono--cache-timer
           (run-with-timer
            org-mono-cache-delay
            nil
-           (lambda (buffer)
-             ;; HACK: nothing unexpected should
-             (condition-case err
-                 (when (or (and org-mono-all-org-files (with-current-buffer buffer
-                                                         (bound-and-true-p org-mode)))
-                           (member (buffer-file-name buffer) (org-mono--get-files)))
-                   (org-mono--cache-file (buffer-file-name buffer) t))
-               (error (princ
-                       (format "Unexpected error during org-mono caching: %s" err))
-                      nil))
-             (setq org-mono--cache-timer nil))
-           (current-buffer)))))
+           #'org-mono--execute-cache-queue))))
 
 (defun org-mono--full-cache (&optional files)
   "Cache all files in `org-mono-files'."
@@ -757,7 +777,8 @@ Note this only work if current file is indexed in cache."
    (list
     (funcall org-mono-completing-read-fn "Archive headline: ")))
   (org-mono--with-headline headline
-    (org-archive-subtree)))
+    (org-archive-subtree))
+  (org-mono--execute-cache-queue))
 
 (defun org-mono-refile (headline)
   "Analog to `org-refile' with RFLOC set to nil."
@@ -774,7 +795,8 @@ Note this only work if current file is indexed in cache."
                       (alist-get :file headline)
                       ""
                       (marker-position marker))))
-    (org-refile nil nil rfloc)))
+    (org-refile nil nil rfloc))
+  (org-mono--execute-cache-queue))
 
 (defun org-mono-refile-from (headline headline-target)
   "Refile HEADLINE under HEADLINE-TARGET."
@@ -798,7 +820,8 @@ Note this only work if current file is indexed in cache."
      (:file . ,(alist-get :file headline-target))))
   ;; HACK: to update cache with new headline
   (org-mono--with-headline headline-target
-    nil))
+    nil)
+  (org-mono--execute-cache-queue))
 
 (defun org-mono-rename (headline)
   "Rename HEADLINE."
@@ -811,7 +834,9 @@ Note this only work if current file is indexed in cache."
            (new-file-link `((:headline . ,new-name)
                             (:file . ,(alist-get :file headline)))))
       (org-edit-headline new-name)
-      (org-mono--update-file-links headline new-file-link))))
+      (org-mono--update-file-links headline new-file-link)))
+  (org-mono--execute-cache-queue))
+
 
 (defun org-mono-time-stamp (headline)
   "Org time stamp HEADLINE under headline or update if time-stamp found."
@@ -826,7 +851,8 @@ Note this only work if current file is indexed in cache."
         (end-of-line)
         (newline))
       (org-time-stamp nil)
-      (org-indent-line))))
+      (org-indent-line)))
+  (org-mono--execute-cache-queue))
 
 (defun org-mono-capture-under-headline (headline)
   "Capture under HEADLINE."
@@ -898,7 +924,8 @@ Note this only work if current file is indexed in cache."
                  (alist-get :headline headline)))
     (org-mono--with-headline headline
       (org-narrow-to-subtree)
-      (delete-region (point-min) (point-max)))))
+      (delete-region (point-min) (point-max))))
+  (org-mono--execute-cache-queue))
 
 (defun org-mono-goto (headline)
   "Goto HEADLINE."
