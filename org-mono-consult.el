@@ -159,16 +159,6 @@ See `org-mono--headline-components' for components structure."
   "Current week candidate source for
 `org-mono-consult-completing-read'.")
 
-(defun org-mono-consult--position (headline &optional find-file)
-  "Return the position marker for HEADLINE
-See `org-mono--headline-components' for HEADLINE structure.
-FIND-FILE is the file open function, defaulting to `find-file'."
-  (when headline
-    (org-mono--file-link-to-marker
-     headline
-     nil
-     (funcall (or find-file #'find-file) (alist-get :file headline)))))
-
 (defun org-mono--store-overlay-repr ()
   (let* ((overlays-list (overlay-lists))
          (overlays (append (car overlays-list)
