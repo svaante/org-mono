@@ -23,12 +23,11 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     :bind (("M-o o" . org-mono-dwim)
            ("M-o t" . org-mono-todo)
            ("M-o k" . org-mono-delete-headline)
-           ("M-o c" . org-mono-capture-under-headline)
            ("M-o r" . org-mono-rename)
            ("M-o w" . org-mono-refile-from)
            ("M-o b" . org-mono-goto-back-links)
            ("M-o d" . org-mono-time-stamp)
-           ("M-o C" . org-mono-goto-headline-child)
+           ("M-o c" . org-mono-goto-headline-child)
            ("M-o a" . org-mono-archive)
            ("M-o O" . org-mono-goto-otherwindow))
     :config
@@ -41,13 +40,6 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     (setq org-mono-capture-dwim-template '(entry
                                            (file "~/org/notes.org")
                                            "* %(org-mono-dwim-headline)\n  %?"))
-    ;; Capture under headline
-    (setq org-mono-capture-templates '(("t" "Todo"
-                                        "%(org-mono-capture-parent-stars)* TODO %?")
-                                       ("n" "Sub note"
-                                        "%(org-mono-capture-parent-stars)* %?")
-                                       ("l" "Link" "%l %?")))
-
     ;; Optional if narrow after goto
     ;; (setq org-mono-narrow-after-goto 'parent)
 
@@ -59,11 +51,11 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     ;;   "Keymap for actions for org-mono."
     ;;   ("o" org-mono-goto-other-window)
     ;;   ("t" org-mono-todo)
+    ;;   ("r" org-mono-rename)
+    ;;   ("w" org-mono-refile-from)
     ;;   ("a" org-mono-archive)
     ;;   ("k" org-mono-delete-headline)
-    ;;   ("r" org-mono-rename)
-    ;;   ("c" org-mono-capture-under-headline)
-    ;;   ("C" org-mono-goto-headline-child)
+    ;;   ("c" org-mono-goto-headline-child)
     ;;   ("d" org-mono-time-stamp)
     ;;   ("b" org-mono-goto-back-links))
     ;; (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
@@ -105,7 +97,6 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
 
     (setq org-mono-completing-read-fn 'org-mono-consult-completing-read))
 #+end_src
-
 ** Similarities with other packages
 *** Org-agenda
 Org-mono can be used as a poor mans org-agenda with a nice modern interface (consult).
@@ -144,9 +135,12 @@ You might say this sounds similar to [[https://github.com/org-roam/org-roam][org
 
 The configuration setup under [[Installation and setup]] creates new headlines as entries in under one file, to each their own.
 
-But if you are looking for an org-roam like package you should use org-roams.
+But if you are looking for an org-roam like package you should use org-roam.
 1. It's more robust (headline identifiers in org-mono is the headline title).
 2. It's more feature rich (in the node/backlinks space).
 3. It's more mature.
 
-But org-mono should be more customizable is it's less rigid about structure, which should allow the user to customize their org "structure" to their hearts content.
+But org-mono is less rigid about files as its based on headlines and comes with a nice consult completion interface.
+* FAQ:
+*** Why reimplement org functionality behind org-mono functions?
+~org-mono-refile~, ~org-mono-rename~ updates backlinks so be sure to use those. But mostly its because it's to make it play nice with ~embark~.

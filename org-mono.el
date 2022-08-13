@@ -28,15 +28,6 @@ Works as `org-capture-templates' but withouth key and description."
   :type 'list
   :group 'org-mono)
 
-(defcustom org-mono-capture-templates
-  '(("t" "Todo" "%(org-mono-capture-parent-stars)* TODO %?"))
-  "Capture templates that capture under specified region used by
-`org-mono-capture-under-headline'. Same format as
-`org-capture-templates' except for no target as that is handled by
-`org-mono-capture-under-headline'."
-  :type 'list
-  :group 'org-mono)
-
 (defcustom org-mono-headline-level 'all
   "Specifies headline level for indexing."
   :type '(choice (const :tag "All levels" 'all)
@@ -702,32 +693,9 @@ For docs on the rest of the arguments see `completing-read'"
 (defvar org-mono--injected-headline-str nil
   "Used to save candidate match str and inject into org capture templates.")
 
-(defvar org-mono--injected-headline nil
-  "Used to save candidate match and inject into org capture templates.")
-
 (defun org-mono-dwim-headline ()
   "Returns the headline string for the last `org-mono-dwim' non-match."
   org-mono--injected-headline-str)
-
-(defun org-mono-capture-parent-stars ()
-  (unless org-mono--injected-headline
-    (user-error
-     "Should only be used after `org-mono-capture-under-headline'"))
-  (make-string
-   (alist-get :level org-mono--injected-headline)
-   ?*))
-
-(defun org-mono-create-file+function (headline)
-  "Creates an org-capture-file+function from HEADLINE see
-`org-capture-templates'."
-  (lambda ()
-    (let ((marker (org-mono--file-link-to-marker headline)))
-      (set-buffer (org-capture-target-buffer (buffer-file-name
-                                              (marker-buffer marker))))
-      (goto-char (marker-position marker))
-      (if-let ((next-headline-point (org-mono--next-headline-point)))
-          (goto-char next-headline-point)
-        (goto-char (point-max))))))
 
 (defun org-mono--dwim-capture (headline-str)
   "Captures a new headline under new `HEADLINE-STR` with template
@@ -853,25 +821,6 @@ Note this only work if current file is indexed in cache."
       (org-time-stamp nil)
       (org-indent-line)))
   (org-mono--execute-cache-queue))
-
-(defun org-mono-capture-under-headline (headline)
-  "Capture under HEADLINE."
-  (interactive
-   (list
-    (funcall org-mono-completing-read-fn "Entry headline: ")))
-  (let ((org-capture-templates
-         (mapcar
-          (lambda (entry)
-            (pcase-let ((`(,keys ,desc ,template . ,properties) entry))
-              `(,keys
-                ,desc
-                plain
-                (function ,(org-mono-create-file+function headline))
-                ,template
-                . ,properties)))
-          org-mono-capture-templates)))
-    (setq org-mono--injected-headline headline)
-    (call-interactively #'org-capture)))
 
 (defun org-mono-goto-headline-child (headline child)
   "Goto CHILD of HEADLINE."
