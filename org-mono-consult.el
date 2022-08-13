@@ -198,9 +198,9 @@ See `org-mono--headline-components' for components structure."
                  (push buffer buffers-to-kill)
                  (switch-to-buffer buffer)
                  (widen)
-                 (goto-char (marker-position
-                             (org-mono--file-link-to-marker headline)))
-                 (org-mono--after-jump)))
+                 (when-let (marker (org-mono--file-link-to-marker headline))
+                   (goto-char (marker-position marker))
+                   (org-mono--after-jump))))
               ((and (eq state 'preview)
                     (null headline))
                  (switch-to-buffer reset-buffer))
