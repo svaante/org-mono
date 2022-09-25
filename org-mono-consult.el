@@ -114,7 +114,7 @@ See `org-mono--headline-components' for components structure."
   `(:name            "Special"
     :narrow          ?s
     :category        org-mono
-    :default         t
+    :default         nil
     :only-full-table t
     :items ,(lambda () (funcall org-mono-consult-special-entries-fn)))
   "Special candidate sourcw source for
