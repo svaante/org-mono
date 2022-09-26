@@ -80,7 +80,7 @@ See `org-mono--headline-components' for components structure."
                  (lambda (cand)
                    (let ((todo (alist-get :todo cand)))
                      (and todo (not (equal todo "DONE"))))))))
-    "Not in done todo headline candidate source for
+  "Not in done todo headline candidate source for
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level
@@ -97,17 +97,17 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level-no-todos
-    `(:name     "Top level no todos"
-      :narrow   ?L
-      :category org-mono
-      :default  nil
-      :hidden   t
-      :items
-      ,(lambda () (org-mono--query
-                   (lambda (cand)
-                     (and (eq (alist-get :level cand) 1)
-                          (null (alist-get :todo cand)))))))
-    "Top level headline candidate source with no todos for
+  `(:name     "Top level no todos"
+    :narrow   ?L
+    :category org-mono
+    :default  nil
+    :hidden   t
+    :items
+    ,(lambda () (org-mono--query
+                 (lambda (cand)
+                   (and (eq (alist-get :level cand) 1)
+                        (null (alist-get :todo cand)))))))
+  "Top level headline candidate source with no todos for
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-special
