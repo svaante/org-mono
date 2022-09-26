@@ -51,7 +51,7 @@ See `org-mono--headline-components' for components structure."
   `(:name     "All headlines"
     :narrow   ?h
     :category org-mono
-    :default  t
+    :default  nil
     :shows-all t
     :items
     ,(lambda () (org-mono--query (lambda (_) t))))
