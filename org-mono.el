@@ -754,7 +754,8 @@ Note this only work if current file is indexed in cache."
    (list
     (setq match
           (funcall org-mono-completing-read-fn
-                   "Refile headline: "
+                   (format "Refile headline (%s): "
+                           (nth 4 (org-mono--org-heading-components)))
                    nil
                    t))))
   (when-let* ((marker (org-mono--file-link-to-marker headline))
