@@ -55,6 +55,14 @@ indexing of headlines in current buffer."
                  (const :tag "Only files specified by `org-mono-files`" nil))
   :group 'org-mono)
 
+(defcustom org-mono-advice-org-refile nil
+  "Advice `org-refile-get-location', which is the prompt fn for `org-refile`
+Current limitation is that refile is limited to under headline and not at file
+top level."
+  :type '(choice (const :tag "Advice function" t)
+                 (const :tag "Skip advice" nil))
+  :group 'org-mono)
+
 (defcustom org-mono-narrow-after-goto nil
   "To narrow or not to narrow after jump to a headline.
 See `org-mono--narrow' implementation for details."
@@ -695,6 +703,25 @@ For docs on the rest of the arguments see `completing-read'"
       (gethash match hash-table match))))
 
 ;; Capture
+(defun org-mono--refile-get-location (&optional prompt _ _)
+  "Prompt user for refile location using PROMPT.
+Rest of args (_, _) are only here to match `org-refile-get-location' interface."
+  (if-let* ((headline (funcall org-mono-completing-read-fn
+                               prompt
+                               nil
+                               t))
+            (location-string (string-join
+                              (reverse (cons (alist-get :headline headline)
+                                             (alist-get :parents headline)))
+                              "/")))
+      (list
+       location-string
+       (alist-get :file headline)
+       nil
+       (marker-position
+        (org-mono--file-link-to-marker headline)))
+    (user-error "Invalid target location")))
+
 (defvar org-mono--injected-headline-str nil
   "Used to save candidate match str and inject into org capture templates.")
 
@@ -940,7 +967,10 @@ This mode also enables completion at point and eldoc documentation."
     (add-hook 'post-command-hook #'org-mono--schedule-cache-timer t t)
     (add-hook 'after-change-functions #'org-mono--schedule-cache-timer t t)
     (add-hook 'eldoc-documentation-functions #'org-mono-eldoc-back-links nil t)
-    (add-hook 'completion-at-point-functions #'org-mono-link-complete 100 t))
+    (add-hook 'completion-at-point-functions #'org-mono-link-complete 100 t)
+    (unless org-mono-advice-org-refile
+      (advice-remove 'org-refile-get-location
+                     #'org-mono--refile-get-location)))
    (t
     (remove-hook 'post-command-hook #'org-mono--schedule-cache-timer t)
     (remove-hook 'after-change-functions #'org-mono--schedule-cache-timer t)
@@ -948,7 +978,11 @@ This mode also enables completion at point and eldoc documentation."
     (remove-hook 'completion-at-point-functions #'org-mono-link-complete t)
     (when org-mono--cache-timer
       (cancel-timer org-mono--cache-timer)
-      (setq org-mono--cache-timer nil)))))
+      (setq org-mono--cache-timer nil))
+    (when org-mono-advice-org-refile
+      (advice-add 'org-refile-get-location
+                  :override
+                  #'org-mono--refile-get-location)))))
 
 (defun turn-on-headline-cmpl-mode ()
   "If `org-mono-mode' should be enabled for buffer.
@@ -969,8 +1003,15 @@ Based on `org-mono-all-org-files' or if buffer is specified by
   :init-value nil
   (cond
    (global-org-mono-mode
+    (when org-mono-advice-org-refile
+      (advice-add 'org-refile-get-location
+                  :override
+                  #'org-mono--refile-get-location))
     (add-hook 'org-capture-after-finalize-hook #'org-mono--full-cache t))
    (t
+    (unless org-mono-advice-org-refile
+      (advice-remove 'org-refile-get-location
+                     #'org-mono--refile-get-location))
     (remove-hook 'org-capture-after-finalize-hook #'org-mono--full-cache t))))
 
 (provide 'org-mono)
