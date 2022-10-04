@@ -20,11 +20,16 @@ Value could either be function that returns a list of files or a list of files."
   :group 'org-mono)
 
 (defcustom org-mono-capture-dwim-template
-  '(entry
-    (file "~/org/notes.org")
-    "* %(org-mono-dwim-headline)\n  %?")
+  nil
   "The default capture template that is used with `org-mono-dwim'.
-Works as `org-capture-templates' but withouth key and description."
+Works as `org-capture-templates' but withouth key and description.
+If non nil uses the first file specified in org-mono-files
+
+`(entry
+   (file ,(car org-mono-files))
+   \"* %(org-mono-dwim-headline)\\n  %?\")
+
+See `org-mono--dwim-capture'."
   :type 'list
   :group 'org-mono)
 
@@ -700,13 +705,17 @@ For docs on the rest of the arguments see `completing-read'"
 (defun org-mono--dwim-capture (headline-str)
   "Captures a new headline under new `HEADLINE-STR` with template
 `org-mono-capture-dwim-template'."
-  (unless org-mono-capture-dwim-template
-   (user-error "org-mono-capture-dwim-template is nil, specify default org-mono capture template"))
-  (let ((org-capture-templates (list (append
-                                      '("a" "")
-                                      org-mono-capture-dwim-template))))
-    (setq org-mono--injected-headline-str headline-str)
-    (org-capture nil "a")))
+  (unless (or org-mono-capture-dwim-template
+              (car org-mono-files))
+    (user-error
+     "org-mono-capture-dwim-template is nil and unable to derive file from org-mono-files"))
+  (let* ((org-mono-capture-dwim-template (or org-mono-capture-dwim-template
+                                             `(entry
+                                               (file ,(car org-mono-files))
+                                               "* %(org-mono-dwim-headline)\n  %?")))
+         (org-capture-entry `(nil nil . ,org-mono-capture-dwim-template))
+         (org-mono--injected-headline-str headline-str))
+    (org-capture)))
 
 ;; Eldoc integration
 (defun org-mono--back-links-in-heading ()
