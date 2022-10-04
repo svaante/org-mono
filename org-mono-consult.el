@@ -49,7 +49,7 @@ See `org-mono--headline-components' for components structure."
 
 (defvar org-mono-consult--source-headline
   `(:name     "All headlines"
-    :narrow   ?h
+    :narrow   ? 
     :category org-mono
     :default  nil
     :shows-all t
