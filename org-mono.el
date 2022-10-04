@@ -264,9 +264,11 @@ but with `org-odd-levels-only' set to nil."
 (defun org-mono--file-link-to-marker (components)
   "Create marker from COMPONENTS see `org-mono--headline-components' for
 COMPONENTS data structure."
-  (with-current-buffer (find-file-noselect (alist-get :file components))
-    (org-find-exact-headline-in-buffer
-     (alist-get :headline components))))
+  (let ((olp (cons
+              (alist-get :file components)
+              (reverse (cons (alist-get :headline components)
+                             (alist-get :parents components))))))
+      (org-find-olp olp)))
 
 (defun org-mono--headline-re ()
   "Construct regexp for headline. Uses `org-mono-headline-level'."
