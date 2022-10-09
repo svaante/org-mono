@@ -267,7 +267,8 @@ See `org-mono--headline-components' for COMPONENTS data structure."
   (let ((path (reverse (cons (alist-get :headline components)
                              (alist-get :parents components))))
         beg found)
-    (org-mono--with-file (alist-get :file components)
+    (with-current-buffer (find-file-noselect
+                          (alist-get :file components))
       (org-with-wide-buffer
        (goto-char (point-min))
        (while (and (not found)
