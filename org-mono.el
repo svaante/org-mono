@@ -282,8 +282,7 @@ COMPONENTS data structure."
     (pcase-let ((`(,level ,_ ,todo ,prio ,headline ,tags)
                  (org-mono--org-heading-components))
                 (timestamp
-                 (org-mono--get-timestamp-at-headline))
-                (parents (org-mono--get-parents-at-point)))
+                 (org-mono--get-timestamp-at-headline)))
       `((:level . ,level)
         (:todo  . ,todo)
         (:prio  . ,prio)
@@ -292,8 +291,8 @@ COMPONENTS data structure."
         (:file-links . ,(org-mono--heading-org-links))
         (:back-links . ,nil)
         (:timestamp . ,timestamp)
-        (:parents . ,parents)
-        (:file . ,(buffer-file-name (current-buffer)))))))
+        (:file . ,(buffer-file-name (current-buffer)))
+        (:parents . ,nil)))))
 
 (defun org-mono--next-headline-point ()
   "Get point of next headline."
@@ -310,36 +309,6 @@ COMPONENTS data structure."
              nil
              t)
         (match-beginning 0)))))
-
-(defun org-mono--prev-headline-point ()
-  "Get point of prev headline."
-  (save-match-data
-    (save-mark-and-excursion
-      (when (re-search-backward
-             (org-mono--headline-re)
-             nil
-             t)
-        (match-beginning 0)))))
-
-(defun org-mono--get-parents-at-point (&optional starting-point)
-  "Get parents at point if STARTING-POINT non-nil start at STARTING-POINT"
-  (org-with-wide-buffer
-   (save-mark-and-excursion
-     (when starting-point
-       (goto-char starting-point))
-     (pcase-let ((`(,child-level) (org-mono--org-heading-components)))
-       (when-let ((parent-point (org-mono--prev-headline-point)))
-         (goto-char parent-point)
-         (pcase-let ((`(,parent-level ,_ ,_ ,_ ,headline)
-                      (org-mono--org-heading-components)))
-           (cond
-            ((= child-level 1)
-             nil)
-            ((> child-level parent-level)
-             (cons headline
-                   (org-mono--get-parents-at-point parent-point)))
-            (t
-             (org-mono--get-parents-at-point parent-point)))))))))
 
 (defun org-mono--update-file-links (old-file-link new-file-link)
   "Update org links matching OLD-FILE-LINK with NEW-FILE-LINK.
@@ -401,19 +370,27 @@ This function does not update `org-mono--cache' only org files."
 
 (defun org-mono--headlines-components (buffer)
   "Return all headline components for BUFFER."
-  ;; FIX: this is not optimal at all should use headline level instead of
-  ;; org-map-entries
-  (seq-filter
-   (lambda (hc)
-     (pcase org-mono-headline-level
-       ((and (pred integerp) n)
-        (eq (alist-get :level hc) n))
-       ('all t)))
-   (with-current-buffer buffer
-     ;; HACK to remove "Non-existent agenda file" when file does not exist.
-     (cl-flet ((org-agenda-prepare-buffers (&rest _) nil))
-       (org-map-entries
-        #'org-mono--headline-components nil 'file)))))
+  (with-current-buffer buffer
+    (org-with-wide-buffer
+     (let ((parents)
+           (headlines))
+       (goto-char (point-min))
+       (while (re-search-forward (org-mono--headline-re) nil t)
+         (let* ((components (org-mono--headline-components))
+                (level (alist-get :level components)))
+           (while (and parents
+                       (<= level
+                           (alist-get :level (car parents))))
+             (pop parents))
+
+           (setcdr (assq :parents components)
+                   (mapcar (lambda (p)
+                             (alist-get :headline p))
+                           parents))
+           (push components parents)
+           (push components headlines))
+         (end-of-line))
+       (reverse headlines)))))
 
 (defun org-mono--list-headlines (format)
   "Get cache contents. Return as either list or hash-map where key is filename.
