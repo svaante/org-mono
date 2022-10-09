@@ -25,7 +25,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
            ("M-o k" . org-mono-delete-headline)
            ("M-o r" . org-mono-rename)
            ("M-o w" . org-mono-refile-from)
-           ("M-o b" . org-mono-goto-back-links)
+           ("M-o b" . org-mono-goto-backlinks)
            ("M-o d" . org-mono-time-stamp)
            ("M-o c" . org-mono-goto-headline-child)
            ("M-o a" . org-mono-archive)
@@ -57,7 +57,7 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     ;;   ("k" org-mono-delete-headline)
     ;;   ("c" org-mono-goto-headline-child)
     ;;   ("d" org-mono-time-stamp)
-    ;;   ("b" org-mono-goto-back-links))
+    ;;   ("b" org-mono-goto-backlinks))
     ;; (add-to-list 'embark-keymap-alist '(org-mono . embark-org-mono-actions))
 
     (global-org-mono-mode))

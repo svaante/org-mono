@@ -112,19 +112,19 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
     (:tags org-tag 0 15 identity)
     (:parents org-level-5 0 50 ,(lambda (parents)
                                   (string-join parents "/")))
-    (:back-links org-level-4 0 50 ,(lambda (back-links)
+    (:backlinks org-level-4 0 50 ,(lambda (backlinks)
                                     (string-join
                                      (mapcar (lambda (back-link)
                                                (alist-get :headline
                                                           back-link))
-                                             back-links)
+                                             backlinks)
                                      ", "))))
   "Annotation formating."
   :type '(alist :value-type (group face integer function))
   :group 'org-mono)
 
 (defcustom org-mono-annotations-enabled
-  '(:file :level :timestamp :todo :tags :parents :back-links)
+  '(:file :level :timestamp :todo :tags :parents :backlinks)
   "Which headline components annotated with `completing-read'.
 See `org-mono-annotation-format' for available annotations."
   :type 'list
@@ -207,7 +207,7 @@ If function return default candidate."
   (let* ((not-opened (null (find-buffer-visiting file)))
          (buffer (find-file-noselect file t))
          (components (org-mono--headlines-components buffer))
-         ;; FIXME: The filter function does not have access to :back-links at this time
+         ;; FIXME: The filter function does not have access to :backlinks at this time
          (filtered-components (seq-filter org-mono-headline-post-filter-fn
                                           components)))
     (puthash file
@@ -221,7 +221,7 @@ If function return default candidate."
 (defun org-mono--add-backlinks-to-cache ()
   "Add backlinks to cache. Expect cache to be populated before running."
   (let ((headlines (org-mono--list-headlines 'list))
-        (back-links-hmap (make-hash-table :test 'equal)))
+        (backlinks-hmap (make-hash-table :test 'equal)))
     (seq-do (lambda (components)
               (let ((file (alist-get :file components))
                     (headline (alist-get :headline components)))
@@ -231,8 +231,8 @@ If function return default candidate."
                                     `((:file . ,file)
                                       (:headline . ,headline))
                                     (gethash file-links
-                                             back-links-hmap))
-                                   back-links-hmap))
+                                             backlinks-hmap))
+                                   backlinks-hmap))
                         (alist-get :file-links components))))
             headlines)
     (seq-do (lambda (components)
@@ -240,8 +240,8 @@ If function return default candidate."
                            (:headline . ,(alist-get :headline components)))))
                 ;; Update inplace
                 (setcdr
-                 (assoc :back-links components)
-                 (gethash key back-links-hmap))))
+                 (assoc :backlinks components)
+                 (gethash key backlinks-hmap))))
             headlines)))
 
 ;; Utils
@@ -309,7 +309,7 @@ See `org-mono--headline-components' for COMPONENTS data structure."
         (:headline  . ,headline)
         (:tags . ,tags)
         (:file-links . ,(org-mono--heading-org-links))
-        (:back-links . ,nil)
+        (:backlinks . ,nil)
         (:timestamp . ,timestamp)
         (:file . ,(buffer-file-name (current-buffer)))
         (:parents . ,nil)))))
@@ -485,15 +485,15 @@ If KEYS are specified KEYS are alisted and then applied to FN."
               (org-mono--list-headlines 'list)))
 
 (defun org-mono--list-backlinks (headline-components)
-  "List all back links for HEADLINE-COMPONENTS."
-  (let ((back-links (mapcar (lambda (comp)
+  "List all backlinks for HEADLINE-COMPONENTS."
+  (let ((backlinks (mapcar (lambda (comp)
                               (cons (alist-get :file comp)
                                     (alist-get :headline comp)))
-                            (alist-get :back-links headline-components))))
+                            (alist-get :backlinks headline-components))))
     (seq-filter (lambda (comp)
                   (member (cons (alist-get :file comp)
                                 (alist-get :headline comp))
-                          back-links))
+                          backlinks))
                 (org-mono--list-headlines 'list))))
 
 (defmacro org-mono--with-file (file-name &rest body)
@@ -744,33 +744,33 @@ Rest of args (_, _) are only here to match `org-refile-get-location' interface."
     (org-capture)))
 
 ;; Eldoc integration
-(defun org-mono--back-links-in-heading ()
+(defun org-mono--backlinks-in-heading ()
   "Gets all backlinks under heading at point."
   (when (and (derived-mode-p 'org-mode)
              (not (org-before-first-heading-p)))
     (let ((headline (nth 4 (org-mono--org-heading-components))))
       (alist-get
-       :back-links 
+       :backlinks 
        (seq-find (lambda (component)
                    (equal (alist-get :headline component)
                           headline))
                  (gethash buffer-file-name
                           org-mono--cache))))))
 
-(defun org-mono-eldoc-back-links (callback)
+(defun org-mono-eldoc-backlinks (callback)
   "This is an `eldoc-documentation-functions' to display backlinks at point.
 Note this only work if current file is indexed in cache."
-  (let ((back-links (org-mono--back-links-in-heading)))
+  (let ((backlinks (org-mono--backlinks-in-heading)))
     (funcall
      callback
-     (when back-links
+     (when backlinks
        (org-fontify-like-in-org-mode
-        (format "Back links: %s"
+        (format "backlinks: %s"
                 (string-join
                  (mapcar (lambda (component)
                            (format "[[%s]]"
                                    (alist-get :headline component)))
-                         back-links)
+                         backlinks)
                  ", ")))))))
 
 ;; Commands
@@ -879,7 +879,7 @@ Note this only work if current file is indexed in cache."
       (org-mono-goto child)
     (user-error "Unable to derive current headline or child")))
 
-(defun org-mono-goto-back-links (headline internal-link)
+(defun org-mono-goto-backlinks (headline internal-link)
   "Goto backlinks for HEADLINE."
   (interactive
    (list
@@ -887,13 +887,13 @@ Note this only work if current file is indexed in cache."
           (funcall org-mono-completing-read-fn
            "Headline: "
            (org-mono--completion-table
-            (org-mono--headlines-list-with-filter #'identity :back-links))
+            (org-mono--headlines-list-with-filter #'identity :backlinks))
            t))
-    (let* ((prompt (format "Back links for *%s*: " (alist-get :headline match)))
+    (let* ((prompt (format "backlinks for *%s*: " (alist-get :headline match)))
            (table (org-mono--completion-table
                    (org-mono--list-backlinks match))))
       (unless table
-        (user-error "No back links for *%s*"  (alist-get :headline match)))
+        (user-error "No backlinks for *%s*"  (alist-get :headline match)))
       (funcall org-mono-completing-read-fn prompt table t))))
   (if internal-link
       (org-mono-goto internal-link)
@@ -965,7 +965,7 @@ This mode also enables completion at point and eldoc documentation."
    (org-mono-mode
     (add-hook 'post-command-hook #'org-mono--schedule-cache-timer t t)
     (add-hook 'after-change-functions #'org-mono--schedule-cache-timer t t)
-    (add-hook 'eldoc-documentation-functions #'org-mono-eldoc-back-links nil t)
+    (add-hook 'eldoc-documentation-functions #'org-mono-eldoc-backlinks nil t)
     (add-hook 'completion-at-point-functions #'org-mono-link-complete 100 t)
     (unless org-mono-advice-org-refile
       (advice-remove 'org-refile-get-location
@@ -973,7 +973,7 @@ This mode also enables completion at point and eldoc documentation."
    (t
     (remove-hook 'post-command-hook #'org-mono--schedule-cache-timer t)
     (remove-hook 'after-change-functions #'org-mono--schedule-cache-timer t)
-    (remove-hook 'eldoc-documentation-functions #'org-mono-eldoc-back-links t)
+    (remove-hook 'eldoc-documentation-functions #'org-mono-eldoc-backlinks t)
     (remove-hook 'completion-at-point-functions #'org-mono-link-complete t)
     (when org-mono--cache-timer
       (cancel-timer org-mono--cache-timer)
