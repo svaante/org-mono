@@ -67,17 +67,13 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
     :after consult
     :straight (org-mono-consult :type git :host github :repo "svaante/org-mono")
     :config
-    ;; Optional if only top level headlines should be visable by default
-    ;; We hide the all headlines source
-    ;; (setq org-mono-consult--source-headline
-    ;;       (plist-put org-mono-consult--source-headline :hidden t))
-    ;; Then "un-hide" the top-level source
+    ;; Optional if all headlines should be visible by default
+    ;; We hide the top level headlines source
     ;; (setq org-mono-consult--source-top-level
-    ;;       (plist-put org-mono-consult--source-top-level :hidden nil))
-    ;; Or if we want to hide todos as well
-    ;; (setq org-mono-consult--source-top-level-no-todos
-    ;;       (plist-put org-mono-consult--source-top-level-no-todos :hidden nil))
-
+    ;;       (plist-put org-mono-consult--source-top-level :hidden t))
+    ;; Then "un-hide" the all headlines source
+    ;; (setq org-mono-consult--source-headline
+    ;;       (plist-put org-mono-consult--source-headline :hidden nil))
 
     ;; Optional if predified capture template names should be inserted
     ;; (add-to-list 'org-mono-consult-sources

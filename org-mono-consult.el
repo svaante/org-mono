@@ -52,6 +52,7 @@ See `org-mono--headline-components' for components structure."
     :narrow   ? 
     :category org-mono
     :default  nil
+    :hidden   t
     :shows-all t
     :items
     ,(lambda () (org-mono--query (lambda (_) t))))
@@ -88,7 +89,7 @@ See `org-mono--headline-components' for components structure."
     :narrow   ?l
     :category org-mono
     :default  nil
-    :hidden   t
+    :hidden   nil
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand)
