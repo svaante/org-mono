@@ -262,13 +262,33 @@ but with `org-odd-levels-only' set to nil."
             (_ org-mono-files))))
 
 (defun org-mono--file-link-to-marker (components)
-  "Create marker from COMPONENTS see `org-mono--headline-components' for
-COMPONENTS data structure."
-  (let ((olp (cons
-              (alist-get :file components)
-              (reverse (cons (alist-get :headline components)
-                             (alist-get :parents components))))))
-      (org-find-olp olp)))
+  "Does it's best to create marker from COMPONENTS.
+See `org-mono--headline-components' for COMPONENTS data structure."
+  (let ((path (reverse (cons (alist-get :headline components)
+                             (alist-get :parents components))))
+        beg found)
+    (org-mono--with-file (alist-get :file components)
+      (org-with-wide-buffer
+       (goto-char (point-min))
+       (while (and (not found)
+                   ;; Have we moved?
+                   (not (eq beg (point))))
+         (setq beg (point))
+         (let ((p path)
+               end)
+           (while (and p
+                       (re-search-forward
+                        (format org-complex-heading-regexp-format
+	                        (regexp-quote (car p)))
+                        end
+                        t))
+             (pop p)
+	     (setq end (save-excursion (org-end-of-subtree t t))))
+           ;; If p is nil all path has been successfully located
+           (unless p
+             (beginning-of-line)
+             (setq found (point-marker)))))))
+    found))
 
 (defun org-mono--headline-re ()
   "Construct regexp for headline. Uses `org-mono-headline-level'."
