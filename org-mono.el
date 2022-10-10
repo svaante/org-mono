@@ -294,8 +294,8 @@ See `org-mono--headline-components' for COMPONENTS data structure."
 (defun org-mono--headline-re ()
   "Construct regexp for headline. Uses `org-mono-headline-level'."
   (pcase org-mono-headline-level
-    ((and (pred integerp) n) (format "^\\*\\{1,%d\\}" n))
-     ('all "^\\*+")))
+    ((and (pred integerp) n) (format "^\\*\\{1,%d\\} " n))
+     ('all "^\\*+ ")))
 
 (defun org-mono--headline-components ()
   "Creates base for headline components at point."
