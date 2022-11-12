@@ -63,7 +63,7 @@ top level."
                  (const :tag "Skip advice" nil))
   :group 'org-mono)
 
-(defcustom org-mono-narrow-after-goto nil
+(defcustom org-mono-narrow-after-goto 'parent
   "To narrow or not to narrow after jump to a headline.
 See `org-mono--narrow' implementation for details."
   :type '(choice (const :tag "Narrow" t)
@@ -83,7 +83,7 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :type 'integer
   :group 'org-mono)
 
-(defcustom org-mono-candidate-with-path nil
+(defcustom org-mono-candidate-with-path t
   "Headline parents as prefix to candidate doing `completing-read'."
   :type '(choice (const :tag "Suffix candidates with path" t)
                  (const :tag "No suffix" nil))
@@ -124,7 +124,7 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :group 'org-mono)
 
 (defcustom org-mono-annotations-enabled
-  '(:file :level :timestamp :todo :tags :parents :backlinks)
+  '(:file :timestamp :todo :tags :backlinks)
   "Which headline components annotated with `completing-read'.
 See `org-mono-annotation-format' for available annotations."
   :type 'list

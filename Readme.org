@@ -20,31 +20,34 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
   (use-package org-mono
     :diminish
     :straight (org-mono :type git :host github :repo "svaante/org-mono")
-    :bind (("M-o o" . org-mono-dwim)
-           ("M-o t" . org-mono-todo)
-           ("M-o k" . org-mono-delete-headline)
-           ("M-o r" . org-mono-rename)
-           ("M-o w" . org-mono-refile-from)
-           ("M-o b" . org-mono-goto-backlinks)
-           ("M-o d" . org-mono-time-stamp)
-           ("M-o c" . org-mono-goto-headline-child)
-           ("M-o a" . org-mono-archive)
-           ("M-o O" . org-mono-goto-otherwindow))
+    :bind (("M-o m o" . org-mono-dwim)
+           ("M-o m t" . org-mono-todo)
+           ("M-o m k" . org-mono-delete-headline)
+           ("M-o m r" . org-mono-rename)
+           ("M-o m w" . org-mono-refile-from)
+           ("M-o m b" . org-mono-goto-backlinks)
+           ("M-o m d" . org-mono-time-stamp)
+           ("M-o m c" . org-mono-goto-headline-child)
+           ("M-o m a" . org-mono-archive)
+           ("M-o m O" . org-mono-goto-otherwindow))
     :config
     (setq org-mono-files '("~/org/notes.org"
                            "~/org/todo.org"
                            "~/org/books.org"))
 
-    ;; Optional if org-mono should index all org buffers
+    ;; Optional if org-mono should index all opened org buffers
     ;; (setq org-mono-all-org-files t)
+
+    ;; Setup capture template for `org-mono-dwim'
     (setq org-mono-capture-dwim-template '(entry
                                            (file "~/org/notes.org")
                                            "* %(org-mono-dwim-headline)\n  %?"))
-    ;; Optional if narrow after goto
-    ;; (setq org-mono-narrow-after-goto 'parent)
 
-    ;; Optional if prefix headline candidate with path
-    ;; (setq org-mono-candidate-with-path t)
+    ;; Optional if narrow after goto should be disabled
+    ;; (setq org-mono-narrow-after-goto nil)
+
+    ;; Optional if headline prefix should not be displayed
+    ;; (setq org-mono-candidate-with-path nil)
 
     ;; Optional if embark is installed
     ;; (embark-define-keymap embark-org-mono-actions
