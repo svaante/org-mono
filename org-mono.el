@@ -1,4 +1,4 @@
-;;; org-mono.el --- Org headline chache and completion -*- lexical-binding: t -*-
+;;; org-mono.el --- Org headline cache and completion -*- lexical-binding: t -*-
 
 (require 'seq)
 (require 'org)
