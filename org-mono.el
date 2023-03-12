@@ -948,7 +948,7 @@ Note this only work if current file is indexed in cache."
 with `nameorg-mono-capture-default'."
   (interactive
    (list
-    (funcall org-mono-completing-read-fn "DWIM headline: ")))
+    (funcall org-mono-completing-read-fn "Headline: ")))
   (cond ((listp headline) (org-mono-goto headline))
         ((stringp headline) (org-mono--dwim-capture headline))))'
 
