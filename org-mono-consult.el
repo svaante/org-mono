@@ -48,8 +48,7 @@ See `org-mono--headline-components' for components structure."
                org-mono-consult--hash-map)))
 
 (defvar org-mono-consult--source-headline
-  `(:name     "All headlines"
-    :narrow   ? 
+  `(:narrow   (?  . "All")
     :category org-mono
     :default  nil
     :hidden   t
@@ -59,8 +58,7 @@ See `org-mono--headline-components' for components structure."
   "Headline candidate source for `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-todo
-  `(:name     "Todos"
-    :narrow   ?t
+  `(:narrow   (?t . "Todo")
     :category org-mono
     :default  nil
     :hidden   t
@@ -71,8 +69,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-todo-in-progress
-  `(:name     "Todos in-progress"
-    :narrow   ?i
+  `(:narrow   (?i . "In progress")
     :category org-mono
     :default  nil
     :hidden   t
@@ -85,8 +82,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level
-  `(:name     "Top level"
-    :narrow   ?l
+  `(:narrow   (?l . "Top level")
     :category org-mono
     :default  nil
     :hidden   nil
@@ -98,8 +94,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level-no-todos
-  `(:name     "Top level no todos"
-    :narrow   ?L
+  `(:narrow   (?L . "Top level no todos")
     :category org-mono
     :default  nil
     :hidden   t
@@ -112,8 +107,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-special
-  `(:name            "Special"
-    :narrow          ?s
+  `(:narrow          (?s . "Special")
     :category        org-mono
     :default         nil
     :only-full-table t
@@ -122,8 +116,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-today
-  `(:name            "Today"
-    :narrow          ?d
+  `(:narrow          (?d . "Today")
     :category        org-mono
     :default         nil
     :hidden          t
@@ -141,8 +134,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-week
-  `(:name            "Week"
-    :narrow          ?w
+  `(:narrow          (?w . "This week")
     :category        org-mono
     :default         nil
     :hidden          t
