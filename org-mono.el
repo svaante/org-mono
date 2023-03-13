@@ -1009,7 +1009,7 @@ Based on `org-mono-all-org-files' or if buffer is specified by
                   #'org-mono--refile-get-location))
     (add-hook 'org-capture-after-finalize-hook #'org-mono--full-cache t))
    (t
-    (unless org-mono-advice-org-refile
+    (when org-mono-advice-org-refile
       (advice-remove 'org-refile-get-location
                      #'org-mono--refile-get-location))
     (remove-hook 'org-capture-after-finalize-hook #'org-mono--full-cache t))))
