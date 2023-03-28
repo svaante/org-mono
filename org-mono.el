@@ -631,11 +631,9 @@ Uses TABLE to calculate the max length for the candidates."
       (let ((components (gethash candidate table)))
         (if components
           (concat
-           (make-string (- --candidates-max-length
-                           (length candidate))
-                        ?\s)
-           "  "
-           (string-join
+           (propertize " " 'display
+                       `(space :align-to (+ left ,--candidates-max-length)))
+            (string-join
             (mapcar (lambda (key)
                       (pcase-let* ((annotation-format
                                     (alist-get key org-mono-annotation-format))
