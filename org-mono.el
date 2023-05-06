@@ -95,7 +95,7 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
                  (const :tag "No suffix" nil))
   :group 'org-mono)
 
-(defcustom org-mono-completion-candidate-max-length 60
+(defcustom org-mono-completion-candidate-max-length 80
   "Max candidate length. Increase this value if window width is a non-issue."
   :type 'integer
   :group 'org-mono)
@@ -633,7 +633,7 @@ Uses TABLE to calculate the max length for the candidates."
           (concat
            (propertize " " 'display
                        `(space :align-to (+ left ,--candidates-max-length)))
-            (string-join
+           (string-join
             (mapcar (lambda (key)
                       (pcase-let* ((annotation-format
                                     (alist-get key org-mono-annotation-format))
@@ -749,7 +749,7 @@ Rest of args (_, _) are only here to match `org-refile-get-location' interface."
              (not (org-before-first-heading-p)))
     (let ((headline (nth 4 (org-mono--org-heading-components))))
       (alist-get
-       :backlinks 
+       :backlinks
        (seq-find (lambda (component)
                    (equal (alist-get :headline component)
                           headline))
@@ -888,7 +888,7 @@ Note this only work if current file is indexed in cache."
            (org-mono--completion-table
             (org-mono--headlines-list-with-filter #'identity :backlinks))
            t))
-    (let* ((prompt (format "backlinks for *%s*: " (alist-get :headline match)))
+    (let* ((prompt (format "Backlinks for *%s*: " (alist-get :headline match)))
            (table (org-mono--completion-table
                    (org-mono--list-backlinks match))))
       (unless table

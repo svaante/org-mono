@@ -20,21 +20,14 @@
   :type '(repeat symbol)
   :group 'org-mono)
 
-(defun org-mono-consult-special-entries-default-fn ()
-  (list
-   (format-time-string "Journal %Y-%m-%d")))
-
-(defcustom org-mono-consult-special-entries-fn
-  #'org-mono-consult-special-entries-default-fn
-  "Function to generate special entires
-See `org-mono-consult-special-entries-default-fn' and
-`org-mono-consult--source-special'."
-  :type 'function
-  :group 'org-mono)
-
-(defvar org-mono-consult--hash-map (make-hash-table)
+(defvar org-mono-consult--hash-map nil
   "Local variable used to generate candidates for
 `org-mono-consult-sources'")
+
+(defvar org-mono-consult--hist nil)
+
+(defun org-mono-consult--annotate (candidate)
+  (funcall (org-mono--annotate org-mono-consult--hash-map) candidate))
 
 (defun org-mono--query (filter)
   "Return a list of string candidates which fn FILTER is non-nil.
@@ -52,7 +45,7 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :default  nil
     :hidden   t
-    :shows-all t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda () (org-mono--query (lambda (_) t))))
   "Headline candidate source for `org-mono-consult-completing-read'.")
@@ -62,6 +55,7 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :default  nil
     :hidden   t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand) (alist-get :todo cand)))))
@@ -73,6 +67,7 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :default  nil
     :hidden   t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand)
@@ -82,10 +77,11 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level
-  `(:narrow   (?l . "Top level")
+  `(:narrow   (?T . "Top level")
     :category org-mono
     :default  nil
     :hidden   nil
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand)
@@ -98,6 +94,7 @@ See `org-mono--headline-components' for components structure."
     :category org-mono
     :default  nil
     :hidden   t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda () (org-mono--query
                  (lambda (cand)
@@ -106,20 +103,12 @@ See `org-mono--headline-components' for components structure."
   "Top level headline candidate source with no todos for
 `org-mono-consult-completing-read'.")
 
-(defvar org-mono-consult--source-special
-  `(:narrow          (?s . "Special")
-    :category        org-mono
-    :default         nil
-    :only-full-table t
-    :items ,(lambda () (funcall org-mono-consult-special-entries-fn)))
-  "Special candidate sourcw source for
-`org-mono-consult-completing-read'.")
-
 (defvar org-mono-consult--source-today
   `(:narrow          (?d . "Today")
     :category        org-mono
     :default         nil
     :hidden          t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda ()
        (let ((current-day (org-today)))
@@ -138,6 +127,7 @@ See `org-mono--headline-components' for components structure."
     :category        org-mono
     :default         nil
     :hidden          t
+    :annotate org-mono-consult--annotate
     :items
     ,(lambda ()
        (let ((current-week (org-days-to-iso-week (org-today))))
@@ -151,16 +141,6 @@ See `org-mono--headline-components' for components structure."
                  current-week))))))))
   "Current week candidate source for
 `org-mono-consult-completing-read'.")
-
-(defun org-mono--store-overlay-repr ()
-  (let* ((overlays-list (overlay-lists))
-         (overlays (append (car overlays-list)
-                           (cdr overlays-list))))
-    (mapcar (lambda (overlay)
-              `(,(overlay-start overlay)
-                ,(overlay-end overlay)
-                . ,(overlay-properties overlay)))
-            overlays)))
 
 (defun org-mono-consult--headline-state ()
   "Headline state function."
@@ -201,20 +181,6 @@ See `org-mono--headline-components' for components structure."
                (seq-do #'kill-buffer buffers-to-kill)
                (switch-to-buffer reset-buffer)))))))
 
-;; FIX: I am to lazy to figure out why this is happening
-;; this is definitely going to break someday
-(defun org-mono-consult--annotate (table)
-  "Create annotatio function for `org-mono-consult-completing-read'
-compleations. TABLE consist of the hash-table.
-See `org-mono--completion-table'"
-  (let ((annotate-fn (org-mono--annotate table)))
-    (lambda (candidate)
-      (funcall annotate-fn
-               (apply #'concat
-                      (butlast (split-string candidate "") 2))))))
-
-(defvar org-mono-consult--hist nil)
-
 (defun org-mono-consult-completing-read (prompt
                                          &optional
                                          hash-table
@@ -224,36 +190,12 @@ HASH-TABLE is used when the total set of precomputet headlines candidates is not
 preferable. See `org-mono-consult-completing-read' how HASH-TABLE is
 constructed.
 For docs on the rest of the arguments see `completing-read'"
-  (setq org-mono-consult--hash-map
-        (or hash-table (org-mono--completion-table)))
-  (let* (;; If we have recieved a hash-table remove :only-full-table
-         ;; sources
-         (sources (if hash-table
-                      (seq-filter
-                       (lambda (source)
-                         (not (plist-get source :only-full-table)))
-                       org-mono-consult-sources)
-                    org-mono-consult-sources))
-         ;; If we have require-match and hash-table "un-hide"
-         ;; all `:shows-all' temporarily
-         (sources (if (and hash-table require-match)
-                      (mapcar (lambda (source)
-                                (if (plist-get (eval source) :shows-all)
-                                      (plist-put
-                                       (seq-copy (eval source))
-                                       :hidden
-                                       nil)
-                                  source))
-                              sources)
-                    sources))
-         (match (consult--multi sources
-                                :require-match require-match
+  (let* ((org-mono-consult--hash-map (or hash-table (org-mono--completion-table)))
+         (match (consult--multi org-mono-consult-sources
                                 :prompt prompt
-                                :annotate (org-mono-consult--annotate
-                                           org-mono-consult--hash-map)
+                                :require-match require-match
                                 :state (org-mono-consult--headline-state)
-                                :history 'org-mono-consult--hist
-                                )))
+                                :history 'org-mono-consult--hist)))
     (gethash (car match) org-mono-consult--hash-map (car match))))
 
 (provide 'org-mono-consult)
