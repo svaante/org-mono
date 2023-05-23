@@ -63,12 +63,18 @@ top level."
                  (const :tag "Skip advice" nil))
   :group 'org-mono)
 
-(defcustom org-mono-narrow-after-goto 'parent
-  "To narrow or not to narrow after jump to a headline.
-See `org-mono--narrow' implementation for details."
-  :type '(choice (const :tag "Narrow" t)
-                 (const :tag "Narrow at parent" 'parent)
-                 (const :tag "Do not narrow" nil))
+(defcustom org-mono-after-goto 'indirect-buffer
+  "To narrow or not to narrow after jump to a headline."
+  :type '(choice (const :tag "Create indirect buffer" 'indirect-buffer)
+                 (const :tag "Narrow" 'narrow)
+                 (const :tag "Do nothing" nil))
+  :group 'org-mono)
+
+(defcustom org-mono-after-goto-position 'parent
+  "Where to apply `org-mono-after-goto' action.
+Only applies when `org-mono-after-goto' is non-nil"
+  :type '(choice (const :tag "At headline" t)
+                 (const :tag "At parent" 'parent))
   :group 'org-mono)
 
 (defcustom org-mono-auto-save t
@@ -605,17 +611,22 @@ Cleans up buffer if not all ready existing in buffer list."
                       (< level (alist-get :level comp)))
                     candidates)))
 
-(defun org-mono--after-jump ()
-  (pcase org-mono-narrow-after-goto
-    ('parent
-     (let ((orig-point (point)))
-       (ignore-errors (outline-up-heading 1))
-       (org-show-subtree)
-       (org-narrow-to-subtree)
-       (goto-char orig-point)))
-    ('t
-     (org-narrow-to-subtree)))
-  (org-show-subtree))
+(defun org-mono--after-jump (&optional preview)
+  (let ((starting-point (point)))
+    (when (eql org-mono-after-goto-position 'parent)
+      (ignore-errors (outline-up-heading 1))
+      (org-show-subtree))
+    (cond
+     ((and (eq org-mono-after-goto 'indirect-buffer)
+           (not preview))
+      (let ((org-indirect-buffer-display 'current-window))
+        (org-tree-to-indirect-buffer)))
+     ((or (eq org-mono-after-goto 'narrow)
+          (and (eq org-mono-after-goto 'indirect-buffer)
+               preview))
+      (org-narrow-to-subtree)))
+    (goto-char starting-point)
+    (org-show-subtree)))
 
 ;; Completions
 (defun org-mono--annotate (table)

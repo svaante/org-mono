@@ -173,7 +173,7 @@ See `org-mono--headline-components' for components structure."
                  (widen)
                  (when-let (marker (org-mono--file-link-to-marker headline))
                    (goto-char (marker-position marker))
-                   (org-mono--after-jump))))
+                   (org-mono--after-jump t))))
               ((and (eq state 'preview)
                     (null headline))
                  (switch-to-buffer reset-buffer))

@@ -43,8 +43,10 @@ It's *highly* recommended to use this package with [[https://github.com/minad/co
                                            (file "~/org/notes.org")
                                            "* %(org-mono-dwim-headline)\n  %?"))
 
-    ;; Optional if narrow after goto should be disabled
-    ;; (setq org-mono-narrow-after-goto nil)
+    ;; Optional if headings should not be opened as indirect buffers
+    ;; (setq org-mono-after-goto nil)
+    ;; If links should opened and then narrowed instead of using indirect buffer
+    ;; (setq org-mono-after-goto 'narrow)
 
     ;; Optional if headline prefix should not be displayed
     ;; (setq org-mono-candidate-with-path nil)
