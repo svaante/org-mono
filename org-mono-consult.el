@@ -13,7 +13,6 @@
     org-mono-consult--source-todo
     org-mono-consult--source-todo-in-progress
     org-mono-consult--source-top-level
-    org-mono-consult--source-top-level-no-todos
     org-mono-consult--source-today
     org-mono-consult--source-week)
   "Sources used by `org-mono-consult-completing-read'."
@@ -77,7 +76,7 @@ See `org-mono--headline-components' for components structure."
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-top-level
-  `(:narrow   (?T . "Top level")
+  `(:narrow   (?1 . "Level 1")
     :category org-mono
     :default  nil
     :hidden   nil
@@ -87,20 +86,6 @@ See `org-mono--headline-components' for components structure."
                  (lambda (cand)
                    (eq (alist-get :level cand) 1)))))
   "Top level headline candidate source for
-`org-mono-consult-completing-read'.")
-
-(defvar org-mono-consult--source-top-level-no-todos
-  `(:narrow   (?L . "Top level no todos")
-    :category org-mono
-    :default  nil
-    :hidden   t
-    :annotate org-mono-consult--annotate
-    :items
-    ,(lambda () (org-mono--query
-                 (lambda (cand)
-                   (and (eq (alist-get :level cand) 1)
-                        (null (alist-get :todo cand)))))))
-  "Top level headline candidate source with no todos for
 `org-mono-consult-completing-read'.")
 
 (defvar org-mono-consult--source-today
