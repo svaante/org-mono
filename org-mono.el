@@ -419,10 +419,14 @@ This function does not update `org-mono--cache' only org files."
          (end-of-line))
        (reverse headlines)))))
 
+(defvar org-mono--first-time-cache nil)
+
 (defun org-mono--list-headlines (format)
   "Get cache contents. Return as either list or hash-map where key is filename.
 This is specified with FORMAT as 'list or 'hash."
-  (when (seq-empty-p (hash-table-keys org-mono--cache))
+  ;; Cache all uncached files
+  (unless org-mono--first-time-cache
+    (setq org-mono--first-time-cache t)
     (org-mono--full-cache))
   (pcase format
     ('hash org-mono--cache)
