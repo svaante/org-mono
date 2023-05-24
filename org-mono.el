@@ -1001,13 +1001,14 @@ This mode also enables completion at point and eldoc documentation."
   "If `org-mono-mode' should be enabled for buffer.
 Based on `org-mono-all-org-files' or if buffer is specified by
 `org-mono-files'."
-  (if (and org-mono-all-org-files
-           buffer-file-name
-           (equal (file-name-extension buffer-file-name)
-                  "org"))
-      (org-mono-mode)
-    (when (member buffer-file-name (org-mono--get-files))
-      (org-mono-mode))))
+  (let ((file-name (buffer-file-name (org-base-buffer (current-buffer)))))
+    (if (and org-mono-all-org-files
+             file-name
+             (equal (file-name-extension file-name)
+                    "org"))
+        (org-mono-mode)
+      (when (member file-name (org-mono--get-files))
+        (org-mono-mode)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-org-mono-mode
