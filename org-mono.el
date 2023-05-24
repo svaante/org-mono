@@ -179,7 +179,7 @@ If function return default candidate."
   ;; Push current buffer to cache queue
   (when (boundp 'org-mono--cache-queue)
     (let* ((buffer (current-buffer))
-           (file (buffer-file-name buffer)))
+           (file (org-mono--buffer-file-name buffer)))
       (when (and
              ;; Do not add file if its all ready in the queue
              (not (member file org-mono--cache-queue))
@@ -254,6 +254,9 @@ If function return default candidate."
 (defconst org-mono--link-re
   "\\[\\[\\(file:\\(.+\\.org\\)::\\)?\\*\\(.+\\)\\]\\[.*\\]\\]")
 
+(defun org-mono--buffer-file-name (&optional buffer)
+  (buffer-file-name (org-base-buffer (or buffer (current-buffer)))))
+
 (defun org-mono--org-heading-components ()
   "Wrapper around `org-heading-components'
 but with `org-odd-levels-only' set to nil."
@@ -318,7 +321,7 @@ See `org-mono--headline-components' for COMPONENTS data structure."
         (:file-links . ,(org-mono--heading-org-links))
         (:backlinks . ,nil)
         (:timestamp . ,timestamp)
-        (:file . ,(buffer-file-name (current-buffer)))
+        (:file . ,(org-mono--buffer-file-name))
         (:parents . ,nil)))))
 
 (defun org-mono--next-headline-point ()
@@ -389,7 +392,7 @@ This function does not update `org-mono--cache' only org files."
                                      (substring-no-properties
                                       (match-string 3))))
                    (filename (or match-filename
-                                 (buffer-file-name (current-buffer)))))
+                                 (org-mono--buffer-file-name))))
               (push `((:file . ,(expand-file-name filename))
                       (:headline . ,match-headline))
                     links)))
@@ -768,7 +771,7 @@ Rest of args (_, _) are only here to match `org-refile-get-location' interface."
        (seq-find (lambda (component)
                    (equal (alist-get :headline component)
                           headline))
-                 (gethash buffer-file-name
+                 (gethash (org-mono--buffer-file-name)
                           org-mono--cache))))))
 
 (defun org-mono-eldoc-backlinks (callback)
@@ -1001,14 +1004,13 @@ This mode also enables completion at point and eldoc documentation."
   "If `org-mono-mode' should be enabled for buffer.
 Based on `org-mono-all-org-files' or if buffer is specified by
 `org-mono-files'."
-  (let ((file-name (buffer-file-name (org-base-buffer (current-buffer)))))
-    (if (and org-mono-all-org-files
-             file-name
-             (equal (file-name-extension file-name)
-                    "org"))
-        (org-mono-mode)
-      (when (member file-name (org-mono--get-files))
-        (org-mono-mode)))))
+  (if (and org-mono-all-org-files
+           (org-mono--buffer-file-name)
+           (equal (file-name-extension (org-mono--buffer-file-name))
+                  "org"))
+      (org-mono-mode)
+    (when (member (org-mono--buffer-file-name) (org-mono--get-files))
+      (org-mono-mode))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-org-mono-mode
