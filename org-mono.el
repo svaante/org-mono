@@ -122,7 +122,7 @@ Increasing the value of `org-mono-cache-delay' should improve performance."
   :group 'org-mono)
 
 (defcustom org-mono-annotations-enabled
-  '(:file :timestamp :todo :tags :backlinks)
+  '(:backlinks)
   "Which headline components annotated with `completing-read'.
 See `org-mono-annotation-format' for available annotations."
   :type 'list
