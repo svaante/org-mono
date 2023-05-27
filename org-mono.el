@@ -771,7 +771,7 @@ Note this only work if current file is indexed in cache."
      callback
      (when backlinks
        (org-fontify-like-in-org-mode
-        (format "backlinks: %s"
+        (format "Backlinks: %s"
                 (string-join
                  (mapcar (lambda (component)
                            (format "[[%s]]"
