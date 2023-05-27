@@ -39,14 +39,6 @@ See `org-mono--dwim-capture'."
                  (integer :tag "Level of headline, [1, n]"))
   :group 'org-mono)
 
-(defcustom org-mono-headline-post-filter-fn #'identity
-  "Specifies which headlines that goes into the cache.
-Takes a component as input and should return a non-nil value if the headline
-should go into the cache. See `org-mono--headline-components' for
-headline data format"
-  :type 'function
-  :group 'org-mono)
-
 (defcustom org-mono-all-org-files nil
   "Limit caching to only files specified by `org-mono-files'.
 If `org-mono-mode' is enable in a non-specified buffer this var toggels
@@ -212,10 +204,7 @@ If function return default candidate."
   "Cache FILE if REBUILD-BACKLINKS is non-nil backlinks are added to the cache."
   (let* ((not-opened (null (find-buffer-visiting file)))
          (buffer (find-file-noselect file t))
-         (components (org-mono--headlines-components buffer))
-         ;; FIXME: The filter function does not have access to :backlinks at this time
-         (filtered-components (seq-filter org-mono-headline-post-filter-fn
-                                          components)))
+         (components (org-mono--headlines-components buffer)))
     (puthash file
              filtered-components
              org-mono--cache)
