@@ -206,7 +206,7 @@ If function return default candidate."
          (buffer (find-file-noselect file t))
          (components (org-mono--headlines-components buffer)))
     (puthash file
-             filtered-components
+             components
              org-mono--cache)
     (when rebuild-backlinks
       (org-mono--add-backlinks-to-cache))
